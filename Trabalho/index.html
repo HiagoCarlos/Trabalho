@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Tarefas com IF</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .task {
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .completed {
+            text-decoration: line-through;
+            color: #888;
+            background-color: #f0f0f0;
+        }
+        
+        .empty-message {
+            color: #666;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Minhas Tarefas</h1>
+    
+    <div id="tasks-container">
+        <!-- As tarefas serão inseridas aqui pelo JavaScript -->
+    </div>
+    
+    <script>
+        // Simulação de dados - pode ser vazio para testar o IF
+        const tasks = [
+            { id: 1, description: "Estudar JavaScript", completed: true },
+            { id: 2, description: "Fazer exercícios", completed: false },
+            // { id: 3, description: "Outra tarefa", completed: false }
+            // Descomente para adicionar mais tarefas ou deixe vazio para testar
+        ];
+        
+        function renderTasks() {
+            const container = document.getElementById('tasks-container');
+            container.innerHTML = '';
+            
+            // IF para verificar se não há tarefas
+            if (tasks.length === 0) {
+                container.innerHTML = '<p class="empty-message">Nenhuma tarefa pendente.</p>';
+                return;
+            }
+            
+            // Loop através das tarefas
+            tasks.forEach(task => {
+                const taskElement = document.createElement('div');
+                
+                // IF para aplicar classe CSS diferente se a tarefa estiver concluída
+                if (task.completed) {
+                    taskElement.className = 'task completed';
+                } else {
+                    taskElement.className = 'task';
+                }
+                
+                taskElement.textContent = task.description;
+                container.appendChild(taskElement);
+            });
+        }
+        
+        // Chamada inicial para renderizar as tarefas
+        renderTasks();
+    </script>
+</body>
+</html>
