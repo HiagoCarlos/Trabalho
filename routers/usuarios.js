@@ -1,17 +1,22 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/bd');
+const path = require('path');
+const user = require('../controllers/usuarios');
 
-// Listar usuários
 router.get('/', async (req, res) => {
-    try {
-        const resultado = await db.query('SELECT * FROM usuarios'); // Troque 'usuarios' pela sua tabela real
-        res.json(resultado.rows);
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Erro ao buscar usuários');
-    }
+    res.render('usuario/index');
 });
 
 
+router.get('/teste', async (req, res) => {
+    res.render('usuario/index');
+});
+
+router.get('/tarefas', async (req, res) => {
+    res.render('usuario/listatarefas');
+    user.listarUsuarios
+});
+
 module.exports = router;
+
