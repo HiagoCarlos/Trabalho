@@ -1,12 +1,40 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style src="/public/src/styles/listatarefas.css"></style>
-    <title>Document</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lista de Tarefas</title>
+  <style src="/public/src/styles/listatarefas.css"> </style>
 </head>
 <body>
-    
+
+  <h1>Minhas Tarefas</h1>
+  <div class="container" id="tarefasContainer"></div>
+
+  <script>
+    // Lista simulada de tarefas
+    const tarefas = [
+      { titulo: "Estudar HTML", descricao: "Praticar estrutura básica e semântica" },
+      { titulo: "Revisar CSS", descricao: "Revisar flexbox e media queries" },
+      { titulo: "Aprender JavaScript", descricao: "Entender laços, DOM e funções" },
+      { titulo: "Fazer exercício de lógica", descricao: "Resolver 5 problemas no HackerRank" }
+    ];
+
+    // Referência do container
+    const container = document.getElementById("tarefasContainer");
+
+    // Gerar os cards usando for
+    for (let i = 0; i < tarefas.length; i++) {
+      const tarefa = tarefas[i];
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <h3>${tarefa.titulo}</h3>
+        <p>${tarefa.descricao}</p>
+      `;
+      container.appendChild(card);
+    }
+  </script>
+
 </body>
 </html>
