@@ -1,18 +1,41 @@
-const express = require('express');
-const app = express();
+// server.js
 require('dotenv').config();
+const express = require('express');
+const session = require('express-session');
+const app = require('./src/app');
 
-app.set('view engine', 'ejs'); // Configura para usar EJS
-app.set('views', './views');  // Define a pasta onde ficam as views
+const PORT = process.env.PORT || 3000;
 
-app.use(express.json());
+// Configuração de sessão
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false }
+}));
 
 // Rotas
-const usuariosRouter = require('./routers/usuarios');
-app.use('/usuarios', usuariosRouter);
+app.get('/', (req, res) => {
+  res.status(200).send('Bem-vindo ao Gerenciador de Tarefas!');
+});
 
-// Servidor
-const PORT = process.env.PORT || 3000;
+// Simulação de erro 404
+app.use((req, res, next) => {
+  res.status(404).json({ 
+    status: 404, 
+    error: 'Endpoint não encontrado' 
+  });
+});
+
+// Manipulador de erro 500
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ 
+    status: 500, 
+    error: 'Erro interno no servidor' 
+  });
+});
+
 app.listen(PORT, () => {
-    console.log(`🚀 Servidor rodando na porta ${PORT}`);
+  console.log(`Servidor rodando na porta ${PORT}`);
 });
