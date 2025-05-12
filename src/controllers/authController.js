@@ -1,39 +1,41 @@
-// src/controllers/authController.js
 const User = require('../models/User');
-const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-exports.register = async (req, res, next) => {
+const generateToken = (userId) => {
+  return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '1h' });
+};
+
+exports.register = async (req, res) => {
   try {
     const { email, password } = req.body;
     
-    // Verifica se usuário já existe
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ error: 'Email já cadastrado' });
     }
 
-    // Criptografa a senha
-    const hashedPassword = await bcrypt.hash(password, 10);
-    
-    const user = new User({
-      email,
-      password: hashedPassword
-    });
-    
+    const user = new User({ email, password });
     await user.save();
-    
-    // Cria token JWT
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: '1h'
-    });
-    
+
+    const token = generateToken(user._id);
     res.status(201).json({ token });
   } catch (error) {
-    next(error);
+    res.status(500).json({ error: error.message });
   }
 };
 
-exports.login = async (req, res, next) => {
-  // Implemente similar ao register
+exports.login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user || !(await user.comparePassword(password))) {
+      return res.status(401).json({ error: 'Credenciais inválidas' });
+    }
+
+    const token = generateToken(user._id);
+    res.json({ token });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };

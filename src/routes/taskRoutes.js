@@ -1,11 +1,12 @@
-// src/routes/taskRoutes.js
 const express = require('express');
-const router = express.Router(); // ← Importante usar express.Router()
+const router = express.Router();
 const taskController = require('../controllers/taskController');
+const { authenticate } = require('../middlewares/auth');
 
-// Rotas corretas com funções handler
+router.use(authenticate);
+
+router.post('/', taskController.createTask);
 router.get('/', taskController.getTasks);
-router.post('/', taskController.createTask); 
 router.get('/:id', taskController.getTask);
 router.put('/:id', taskController.updateTask);
 router.delete('/:id', taskController.deleteTask);

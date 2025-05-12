@@ -1,8 +1,17 @@
-const { createClient } = require('@supabase/supabase-js');
+const mongoose = require('mongoose');
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-);
+const connectDB = async () => {
+  try {
+    const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/';
+    await mongoose.connect(mongoUri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log('MongoDB conectado');
+  } catch (err) {
+    console.error('Erro na conexão com MongoDB:', err);
+    process.exit(1);
+  }
+};
 
-module.exports = supabase;
+module.exports = connectDB;

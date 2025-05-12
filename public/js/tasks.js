@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const description = document.getElementById('task-desc').value;
       
       try {
-        const response = await fetch('/tasks', {
+        const response = await fetch('/api/tasks', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadTasks() {
       try {
         const status = statusFilter.value;
-        let url = '/tasks';
+        let url = '/api/tasks';
         if (status !== 'all') url += `?status=${status}`;
         
         const response = await fetch(url, {
@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (!response.ok) throw new Error('Erro ao carregar tarefas');
         
-        const { data: tasks } = await response.json();
+        const tasks = await response.json();
         renderTasks(tasks);
       } catch (error) {
         showAlert('error', error.message);
@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const isCompleted = e.target.textContent.trim() === 'Desmarcar';
       
       try {
-        const response = await fetch(`/tasks/${taskId}`, {
+        const response = await fetch(`/api/tasks/${taskId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -126,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!confirm('Tem certeza que deseja excluir esta tarefa?')) return;
       
       try {
-        const response = await fetch(`/tasks/${taskId}`, {
+        const response = await fetch(`/api/tasks/${taskId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
