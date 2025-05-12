@@ -1,7 +1,4 @@
-const User = require('../models/User');
-const jwt = require('jsonwebtoken');
-
-const generateToken = (userId) => jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '1h' });
+const supabase = require('../config/supabaseClient');
 
 exports.register = async (req, res) => {
   try {
@@ -12,13 +9,18 @@ exports.register = async (req, res) => {
     if (!password || password.length < 6) {
       return res.status(400).json({ error: 'Senha deve ter pelo menos 6 caracteres' });
     }
-    const existingUser = await User.findOne({ email });
-    if (existingUser) return res.status(400).json({ error: 'Email já cadastrado' });
 
-    const user = new User({ email, password });
-    await user.save();
-    const token = generateToken(user._id);
-    res.status(201).json({ token });
+    const { user, error } = await supabase.auth.api.createUser({
+      email,
+      password,
+      email_confirm: true
+    });
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.status(201).json({ message: 'Usuário registrado com sucesso' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -27,12 +29,14 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
-    if (!user || !(await user.comparePassword(password))) {
+
+    const { session, error } = await supabase.auth.api.signInWithEmail(email, password);
+
+    if (error || !session) {
       return res.status(401).json({ error: 'Credenciais inválidas' });
     }
-    const token = generateToken(user._id);
-    res.json({ token, userId: user._id });
+
+    res.json({ token: session.access_token, userId: session.user.id });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

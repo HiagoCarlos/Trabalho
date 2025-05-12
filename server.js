@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const app = express();
-const connectDB = require('./src/config/bd');
+const connectDB = require('./src/config/supabaseClient');
 const taskRoutes = require('./src/routes/taskRoutes');
 const authRoutes = require('./src/routes/authRoutes');
 const { errorHandler } = require('./src/utils/errorHandler');
