@@ -8,7 +8,6 @@ const taskSchema = new mongoose.Schema({
     enum: ['pendente', 'concluída'], 
     default: 'pendente' 
   },
-  dueDate: Date,
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   createdAt: { type: Date, default: Date.now }
 });

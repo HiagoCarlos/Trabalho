@@ -1,32 +1,28 @@
+// src/controllers/taskController.js
 const Task = require('../models/Task');
-const db = require('../../config/bd'); 
 
-// Criar tarefa
-exports.createTask = async (req, res) => {
+exports.getTasks = async (req, res, next) => {
   try {
-    const task = new Task({
-      ...req.body,
-      user: req.session.userId
-    });
-    await task.save();
-    res.status(201).json(task);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// Listar tarefas
-exports.getTasks = async (req, res) => {
-  try {
-    const tasks = await Task.find({ user: req.session.userId });
+    const tasks = await Task.find({ user: req.user.id });
     res.json(tasks);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
-// Atualizar tarefa
-exports.updateTask = async (req, res) => {
+exports.getTask = async (req, res, next) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) {
+      return res.status(404).json({ message: 'Tarefa não encontrada' });
+    }
+    res.json(task);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.updateTask = async (req, res, next) => {
   try {
     const task = await Task.findByIdAndUpdate(
       req.params.id,
@@ -35,16 +31,33 @@ exports.updateTask = async (req, res) => {
     );
     res.json(task);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
-// Deletar tarefa
-exports.deleteTask = async (req, res) => {
+exports.deleteTask = async (req, res, next) => {
   try {
     await Task.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Tarefa deletada' });
+    res.json({ message: 'Tarefa removida com sucesso' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
+  }
+};
+
+// Já existente
+exports.createTask = async (req, res, next) => {
+  try {
+    const { title, description } = req.body;
+    
+    const task = new Task({
+      title,
+      description,
+      user: req.user.id
+    });
+    
+    await task.save();
+    res.status(201).json(task);
+  } catch (error) {
+    next(error);
   }
 };
