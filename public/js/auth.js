@@ -2,9 +2,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const registerForm = document.getElementById('registerForm');
   const loginForm = document.getElementById('login-form');
 
-  // Verifica se já está autenticado
+  // Função para navegação SPA
+  const navigateTo = (path) => {
+    window.history.pushState({}, '', path);
+    loadContent(path);
+  };
+
+  // Verifica status de autenticação ao carregar
   checkAuthStatus();
 
+  // Função para mostrar alertas estilizados
   const showAlert = (type, message) => {
     const alert = document.createElement('div');
     alert.className = `alert alert-${type}`;
@@ -23,21 +30,138 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => alert.remove(), 3000);
   };
 
+  // Função para carregar conteúdo dinâmico
+  const loadContent = (path) => {
+    const contentDiv = document.getElementById('app-content');
+    if (!contentDiv) return;
+
+    contentDiv.innerHTML = '<div class="loading">Carregando...</div>';
+
+    switch(path) {
+      case '/dashboard':
+        fetchDashboardContent();
+        break;
+      case '/tasks':
+        fetchTasksContent();
+        break;
+      default:
+        contentDiv.innerHTML = '<h1>Página não encontrada</h1>';
+    }
+  };
+
+  // Função para verificar autenticação
   function checkAuthStatus() {
     const token = localStorage.getItem('token');
     const currentPath = window.location.pathname;
-    
-    // Se estiver na página de login/registro mas já autenticado
+
+    // Redireciona se autenticado tentando acessar login/register
     if (token && (currentPath === '/login' || currentPath === '/register')) {
-      window.location.href = '/dashboard';
+      navigateTo('/dashboard');
     }
-    
-    // Se tentar acessar páginas protegidas sem autenticação
+
+    // Redireciona para login se não autenticado tentando acessar áreas protegidas
     if (!token && (currentPath === '/dashboard' || currentPath === '/tasks')) {
-      window.location.href = '/login';
+      navigateTo('/login');
     }
   }
 
+  // Função para buscar conteúdo do dashboard
+  async function fetchDashboardContent() {
+    try {
+      const response = await fetchWithAuth('/api/tasks');
+      const tasks = await response.json();
+
+      const contentDiv = document.getElementById('app-content');
+      contentDiv.innerHTML = `
+        <h1>Dashboard</h1>
+        <div class="user-info">
+          <p>Bem-vindo, ${JSON.parse(localStorage.getItem('user')).email}</p>
+        </div>
+        <div class="tasks-container">
+          <h2>Suas Tarefas</h2>
+          <ul class="tasks-list">
+            ${tasks.map(task => `
+              <li class="task-item ${task.status}">
+                <h3>${task.title}</h3>
+                <p>${task.description || 'Sem descrição'}</p>
+                <span class="status">${task.status}</span>
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+      `;
+    } catch (error) {
+      showAlert('error', 'Erro ao carregar tarefas');
+      console.error('Dashboard error:', error);
+    }
+  }
+
+  // Função para buscar conteúdo da página de tarefas
+  async function fetchTasksContent() {
+    try {
+      const response = await fetchWithAuth('/api/tasks');
+      const tasks = await response.json();
+
+      const contentDiv = document.getElementById('app-content');
+      contentDiv.innerHTML = `
+        <h1>Gerenciar Tarefas</h1>
+        <div class="tasks-actions">
+          <button id="create-task">Nova Tarefa</button>
+        </div>
+        <div class="tasks-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Título</th>
+                <th>Descrição</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tasks.map(task => `
+                <tr>
+                  <td>${task.title}</td>
+                  <td>${task.description || '-'}</td>
+                  <td class="status-cell ${task.status}">
+                    ${task.status}
+                  </td>
+                  <td class="actions">
+                    <button class="edit-btn" data-id="${task._id}">Editar</button>
+                    <button class="delete-btn" data-id="${task._id}">Excluir</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      // Adiciona event listeners para os botões
+      document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const taskId = e.target.getAttribute('data-id');
+          editTask(taskId);
+        });
+      });
+
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const taskId = e.target.getAttribute('data-id');
+          deleteTask(taskId);
+        });
+      });
+
+      document.getElementById('create-task').addEventListener('click', () => {
+        showCreateTaskForm();
+      });
+    } catch (error) {
+      showAlert('error', 'Erro ao carregar tarefas');
+      console.error('Tasks error:', error);
+    }
+  }
+
+  // Função para registrar usuário
   if (registerForm) {
     registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -59,22 +183,27 @@ document.addEventListener('DOMContentLoaded', () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })
         });
-        
+
         const data = await res.json();
-        
+
         if (!res.ok) {
           throw new Error(data.error || 'Erro no registro');
         }
-        
-        // Armazena o token e verifica antes de redirecionar
+
+        // Armazena os dados do usuário
         localStorage.setItem('token', data.token);
-        showAlert('success', 'Registrado com sucesso! Redirecionando...');
-        
-        // Delay para mostrar a mensagem
+        localStorage.setItem('user', JSON.stringify({
+          id: data.userId,
+          email: email
+        }));
+
+        showAlert('success', 'Registro realizado com sucesso!');
+
+        // Navega para o dashboard após 1.5s
         setTimeout(() => {
-          window.location.href = '/dashboard';
+          navigateTo('/dashboard');
         }, 1500);
-        
+
       } catch (error) {
         console.error('Registration error:', error);
         showAlert('error', error.message || 'Erro ao registrar');
@@ -82,6 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Função para login
   if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -103,60 +233,172 @@ document.addEventListener('DOMContentLoaded', () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })
         });
-        
+
         const data = await res.json();
-        
+
         if (!res.ok) {
           throw new Error(data.error || 'Credenciais inválidas');
         }
-        
-        // Verifica se o token foi recebido
-        if (!data.token) {
-          throw new Error('Token não recebido');
-        }
-        
+
+        // Armazena os dados do usuário
         localStorage.setItem('token', data.token);
-        showAlert('success', 'Login realizado! Redirecionando...');
-        
-        // Verificação adicional antes de redirecionar
+        localStorage.setItem('user', JSON.stringify({
+          id: data.userId,
+          email: email
+        }));
+
+        showAlert('success', 'Login realizado com sucesso!');
+
+        // Navega para o dashboard após 1.5s
         setTimeout(() => {
-          if (localStorage.getItem('token')) {
-            window.location.href = '/dashboard';
-          } else {
-            showAlert('error', 'Autenticação falhou');
-          }
+          navigateTo('/dashboard');
         }, 1500);
-        
+
       } catch (error) {
         console.error('Login error:', error);
         showAlert('error', error.message || 'Erro ao fazer login');
       }
     });
   }
+
+  // Adiciona listener para navegação SPA
+  document.body.addEventListener('click', (e) => {
+    if (e.target.classList.contains('nav-link')) {
+      e.preventDefault();
+      navigateTo(e.target.getAttribute('href'));
+    }
+  });
+
+  // Listener para eventos de popstate (voltar/avançar no navegador)
+  window.addEventListener('popstate', () => {
+    loadContent(window.location.pathname);
+  });
 });
 
-// Função para usar em outras páginas
+// Função para requisições autenticadas
 async function fetchWithAuth(url, options = {}) {
   const token = localStorage.getItem('token');
-  
+
   if (!token) {
     window.location.href = '/login';
     return Promise.reject('Não autenticado');
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...options.headers,
-      'Authorization': `Bearer ${token}`
+  const defaultHeaders = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  };
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        ...defaultHeaders,
+        ...options.headers
+      }
+    });
+
+    if (response.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+      return Promise.reject('Sessão expirada');
     }
-  });
 
-  if (response.status === 401) {
-    localStorage.removeItem('token');
-    window.location.href = '/login';
-    return Promise.reject('Sessão expirada');
+    return response;
+  } catch (error) {
+    console.error('Fetch error:', error);
+    throw error;
   }
+}
 
-  return response;
+// Funções auxiliares para gerenciamento de tarefas
+async function editTask(taskId) {
+  try {
+    const response = await fetchWithAuth(`/api/tasks/${taskId}`);
+    const task = await response.json();
+
+    // Implemente seu formulário de edição aqui
+    console.log('Edit task:', task);
+    showAlert('info', `Editando tarefa: ${task.title}`);
+
+  } catch (error) {
+    showAlert('error', 'Erro ao carregar tarefa para edição');
+    console.error('Edit task error:', error);
+  }
+}
+
+async function deleteTask(taskId) {
+  if (!confirm('Tem certeza que deseja excluir esta tarefa?')) return;
+
+  try {
+    const response = await fetchWithAuth(`/api/tasks/${taskId}`, {
+      method: 'DELETE'
+    });
+
+    if (response.ok) {
+      showAlert('success', 'Tarefa excluída com sucesso!');
+      fetchTasksContent(); // Recarrega a lista
+    } else {
+      throw new Error('Falha ao excluir tarefa');
+    }
+  } catch (error) {
+    showAlert('error', 'Erro ao excluir tarefa');
+    console.error('Delete task error:', error);
+  }
+}
+
+function showCreateTaskForm() {
+  const contentDiv = document.getElementById('app-content');
+  contentDiv.innerHTML = `
+    <div class="task-form">
+      <h2>Nova Tarefa</h2>
+      <form id="taskForm">
+        <div class="form-group">
+          <label for="title">Título:</label>
+          <input type="text" id="title" required>
+        </div>
+        <div class="form-group">
+          <label for="description">Descrição:</label>
+          <textarea id="description" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="status">Status:</label>
+          <select id="status">
+            <option value="pendente">Pendente</option>
+            <option value="concluída">Concluída</option>
+          </select>
+        </div>
+        <button type="submit">Salvar</button>
+      </form>
+    </div>
+  `;
+
+  document.getElementById('taskForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await createTask();
+  });
+}
+
+async function createTask() {
+  try {
+    const title = document.getElementById('title').value;
+    const description = document.getElementById('description').value;
+    const status = document.getElementById('status').value;
+
+    const response = await fetchWithAuth('/api/tasks', {
+      method: 'POST',
+      body: JSON.stringify({ title, description, status })
+    });
+
+    if (response.ok) {
+      showAlert('success', 'Tarefa criada com sucesso!');
+      fetchTasksContent(); // Recarrega a lista
+    } else {
+      throw new Error('Falha ao criar tarefa');
+    }
+  } catch (error) {
+    showAlert('error', 'Erro ao criar tarefa');
+    console.error('Create task error:', error);
+  }
 }

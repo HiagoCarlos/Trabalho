@@ -35,14 +35,16 @@ app.get('/register', (req, res) => {
 });
 
 // Rotas protegidas (servem o HTML inicial)
-app.get(['/dashboard', '/tasks'], authenticate, (req, res) => {
+app.get(['/dashboard', '/tasks'], (req, res) => {
   res.sendFile(path.join(__dirname, 'src', 'views', 'dashboard.html'));
 });
 
 // Adicione esta rota para o SPA (importante!)
+// Todas outras rotas
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'src', 'views', 'login.html'));
 });
+
 // Error handler
 app.use(errorHandler);
 
