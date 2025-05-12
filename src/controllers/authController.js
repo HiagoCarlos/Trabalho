@@ -5,9 +5,25 @@ const generateToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '1h' });
 };
 
+const validateEmail = (email) => {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
+};
+
+const validatePassword = (password) => {
+  return typeof password === 'string' && password.length >= 6;
+};
+
 exports.register = async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    if (!validateEmail(email)) {
+      return res.status(400).json({ error: 'Email inválido' });
+    }
+    if (!validatePassword(password)) {
+      return res.status(400).json({ error: 'Senha deve ter pelo menos 6 caracteres' });
+    }
     
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -27,6 +43,14 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    if (!validateEmail(email)) {
+      return res.status(400).json({ error: 'Email inválido' });
+    }
+    if (!validatePassword(password)) {
+      return res.status(400).json({ error: 'Senha inválida' });
+    }
+
     const user = await User.findOne({ email });
 
     if (!user || !(await user.comparePassword(password))) {

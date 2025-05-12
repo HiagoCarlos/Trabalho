@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard - Task Manager</title>
+  <link rel="stylesheet" href="/assents/css/pages/main.css" />
+</head>
+<body>
+  <header>
+    <h1>Dashboard</h1>
+    <button id="logout-btn">Sair</button>
+  </header>
+  <main>
+    <section class="task-creation">
+      <h2>Adicionar Tarefa</h2>
+      <form id="add-task-form">
+        <input type="text" id="task-title" placeholder="Título da tarefa" required />
+        <textarea id="task-desc" placeholder="Descrição da tarefa"></textarea>
+        <button type="submit">Adicionar</button>
+      </form>
+    </section>
+    <section class="task-listing">
+      <h2>Minhas Tarefas</h2>
+      <select id="status-filter">
+        <option value="all">Todas</option>
+        <option value="pendente">Pendentes</option>
+        <option value="concluída">Concluídas</option>
+      </select>
+      <div id="tasks-container"></div>
+    </section>
+  </main>
+  <script src="/js/auth.js"></script>
+  <script src="/js/tasks.js"></script>
+  <script>
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    });
+  </script>
+</body>
+</html>

@@ -1,7 +1,25 @@
 const Task = require('../models/Task');
 
+const validateTaskInput = (data) => {
+  const errors = {};
+  if (!data.title || typeof data.title !== 'string' || data.title.trim() === '') {
+    errors.title = 'Title is required and must be a non-empty string';
+  }
+  if (data.status && !['pendente', 'concluída'].includes(data.status)) {
+    errors.status = 'Status must be either "pendente" or "concluída"';
+  }
+  return {
+    errors,
+    isValid: Object.keys(errors).length === 0
+  };
+};
+
 exports.createTask = async (req, res) => {
   try {
+    const { errors, isValid } = validateTaskInput(req.body);
+    if (!isValid) {
+      return res.status(400).json({ errors });
+    }
     const task = new Task({
       ...req.body,
       user: req.userId
@@ -9,7 +27,7 @@ exports.createTask = async (req, res) => {
     await task.save();
     res.status(201).json(task);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -17,6 +35,9 @@ exports.getTasks = async (req, res) => {
   try {
     const filter = { user: req.userId };
     if (req.query.status) {
+      if (!['pendente', 'concluída'].includes(req.query.status)) {
+        return res.status(400).json({ error: 'Invalid status filter' });
+      }
       filter.status = req.query.status;
     }
     const tasks = await Task.find(filter).sort({ createdAt: -1 });
@@ -40,6 +61,10 @@ exports.getTask = async (req, res) => {
 
 exports.updateTask = async (req, res) => {
   try {
+    const { errors, isValid } = validateTaskInput(req.body);
+    if (!isValid) {
+      return res.status(400).json({ errors });
+    }
     const task = await Task.findOneAndUpdate(
       { _id: req.params.id, user: req.userId },
       req.body,
@@ -50,7 +75,7 @@ exports.updateTask = async (req, res) => {
     }
     res.json(task);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
 
