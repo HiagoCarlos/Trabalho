@@ -1,61 +1,47 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const loginBtn = document.getElementById('login-btn');
-    const logoutBtn = document.getElementById('logout-btn');
+// Login
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
     
-    // Verificar se o usuário está logado
-    if (localStorage.getItem('token')) {
-      toggleAuthState(true);
-    }
-    
-    // Evento de login (simplificado - em produção use um form adequado)
-    loginBtn.addEventListener('click', async () => {
-      try {
-        // Substitua por sua lógica real de login
-        const response = await fetch('/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: 'usuario@exemplo.com',
-            password: 'senha123'
-          })
-        });
-        
-        if (!response.ok) throw new Error('Login falhou');
-        
-        const { data: { token } } = await response.json();
-        localStorage.setItem('token', token);
-        toggleAuthState(true);
-        showAlert('success', 'Login realizado com sucesso!');
-      } catch (error) {
-        showAlert('error', error.message);
-      }
-    });
-    
-    // Evento de logout
-    logoutBtn.addEventListener('click', () => {
-      localStorage.removeItem('token');
-      toggleAuthState(false);
-      showAlert('success', 'Logout realizado com sucesso!');
-    });
-    
-    // Alternar estado de autenticação
-    function toggleAuthState(isLoggedIn) {
-      loginBtn.style.display = isLoggedIn ? 'none' : 'block';
-      logoutBtn.style.display = isLoggedIn ? 'block' : 'none';
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password })
+      });
       
-      // Mostrar/ocultar funcionalidades baseado no login
-      document.getElementById('task-form').style.display = 
-        isLoggedIn ? 'block' : 'none';
-      document.getElementById('tasks-list').style.display = 
-        isLoggedIn ? 'block' : 'none';
+      const data = await response.json();
       
-      if (isLoggedIn) {
-        // Recarregar tarefas se estiver logado
-        document.dispatchEvent(new Event('DOMContentLoaded'));
-      } else {
-        // Limpar lista de tarefas
-        document.getElementById('tasks-container').innerHTML = 
-          '<p>Faça login para ver suas tarefas.</p>';
-      }
+      if (!response.ok) throw new Error(data.error || 'Erro no login');
+      
+      localStorage.setItem('token', data.token);
+      window.location.href = '/';
+    } catch (error) {
+      alert(error.message);
     }
   });
+  
+  // Verificar autenticação em cada requisição
+  async function fetchWithAuth(url, options = {}) {
+    const token = localStorage.getItem('token');
+    
+    if (token) {
+      options.headers = {
+        ...options.headers,
+        'Authorization': `Bearer ${token}`
+      };
+    }
+    
+    const response = await fetch(url, options);
+    
+    if (response.status === 401) {
+      // Token inválido ou expirado
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    
+    return response;
+  }

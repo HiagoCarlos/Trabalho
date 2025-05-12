@@ -1,17 +1,37 @@
 // src/routes/taskRoutes.js
 const express = require('express');
 const router = express.Router();
-const taskController = require('../controllers/taskController');
+const Task = require('../models/Task');
 
-router.post('/', taskController.createTask);
-router.get('/', taskController.getTasks);
-router.get('/:id', taskController.getTaskById);
-router.put('/:id', taskController.updateTask);
-router.delete('/:id', taskController.deleteTask);
+// Banco de dados em memória
+let tasks = [];
+let nextId = 1;
 
-// Rota para simular erro 500
-router.get('/simulate-error', (req, res) => {
-  throw new Error('Erro simulado para teste');
+// GET /tasks - Listar todas
+router.get('/', (req, res) => {
+  res.json(tasks);
 });
+
+// POST /tasks - Criar nova
+router.post('/', (req, res) => {
+  const { title, description } = req.body;
+  
+  if (!title) {
+    return res.status(400).json({ error: 'Título é obrigatório' });
+  }
+  
+  const newTask = {
+    id: nextId++,
+    title,
+    description: description || '',
+    status: 'pendente',
+    createdAt: new Date()
+  };
+  
+  tasks.push(newTask);
+  res.status(201).json(newTask);
+});
+
+// ... (adicionar outras rotas conforme necessário)
 
 module.exports = router;
