@@ -2,6 +2,40 @@ document.addEventListener('DOMContentLoaded', () => {
   const registerForm = document.getElementById('registerForm');
   const loginForm = document.getElementById('login-form');
 
+  // Check token and redirect on page load for persistent login
+  const token = localStorage.getItem('token');
+  const currentPath = window.location.pathname;
+  if (token && (currentPath === '/login' || currentPath === '/register')) {
+    window.history.replaceState({}, '', '/dashboard');
+  }
+
+  // Função para carregar conteúdo dinâmico
+  const loadContent = (path) => {
+    const contentDiv = document.getElementById('app-content');
+    if (!contentDiv) return;
+
+    contentDiv.innerHTML = '<div class="loading">Carregando...</div>';
+
+    switch(path) {
+      case '/dashboard':
+        fetchDashboardContent();
+        break;
+      case '/tasks':
+        fetchTasksContent();
+        break;
+      case '/login':
+        // Redirect to backend login page
+        window.location.href = '/login';
+        break;
+      case '/register':
+        // Redirect to backend register page
+        window.location.href = '/register';
+        break;
+      default:
+        contentDiv.innerHTML = '<h1>Página não encontrada</h1>';
+    }
+  };
+
   // Função para navegação SPA
   const navigateTo = (path) => {
     window.history.pushState({}, '', path);
@@ -30,29 +64,12 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => alert.remove(), 3000);
   };
 
-  // Função para carregar conteúdo dinâmico
-  const loadContent = (path) => {
-    const contentDiv = document.getElementById('app-content');
-    if (!contentDiv) return;
-
-    contentDiv.innerHTML = '<div class="loading">Carregando...</div>';
-
-    switch(path) {
-      case '/dashboard':
-        fetchDashboardContent();
-        break;
-      case '/tasks':
-        fetchTasksContent();
-        break;
-      default:
-        contentDiv.innerHTML = '<h1>Página não encontrada</h1>';
-    }
-  };
-
   // Função para verificar autenticação
   function checkAuthStatus() {
     const token = localStorage.getItem('token');
     const currentPath = window.location.pathname;
+    console.log('checkAuthStatus token:', token);
+    console.log('checkAuthStatus currentPath:', currentPath);
 
     // Redireciona se autenticado tentando acessar login/register
     if (token && (currentPath === '/login' || currentPath === '/register')) {
@@ -199,10 +216,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         showAlert('success', 'Registro realizado com sucesso!');
 
-        // Navega para o dashboard após 1.5s
-        setTimeout(() => {
-          navigateTo('/dashboard');
-        }, 1500);
+        // Navega para o dashboard imediatamente
+        navigateTo('/dashboard');
 
       } catch (error) {
         console.error('Registration error:', error);
@@ -234,7 +249,9 @@ document.addEventListener('DOMContentLoaded', () => {
           body: JSON.stringify({ email, password })
         });
 
+        console.log('Login response status:', res.status);
         const data = await res.json();
+        console.log('Login response data:', data);
 
         if (!res.ok) {
           throw new Error(data.error || 'Credenciais inválidas');
@@ -249,10 +266,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         showAlert('success', 'Login realizado com sucesso!');
 
-        // Navega para o dashboard após 1.5s
-        setTimeout(() => {
-          navigateTo('/dashboard');
-        }, 1500);
+        // Navega para o dashboard imediatamente
+        navigateTo('/dashboard');
 
       } catch (error) {
         console.error('Login error:', error);
@@ -273,11 +288,15 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('popstate', () => {
     loadContent(window.location.pathname);
   });
+
+  // Load initial content dynamically on page load
+  loadContent(window.location.pathname);
 });
 
 // Função para requisições autenticadas
 async function fetchWithAuth(url, options = {}) {
   const token = localStorage.getItem('token');
+  console.log('fetchWithAuth token:', token);
 
   if (!token) {
     window.location.href = '/login';
@@ -297,6 +316,7 @@ async function fetchWithAuth(url, options = {}) {
         ...options.headers
       }
     });
+    console.log(`fetchWithAuth response status for ${url}:`, response.status);
 
     if (response.status === 401) {
       localStorage.removeItem('token');

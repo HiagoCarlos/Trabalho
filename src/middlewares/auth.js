@@ -3,19 +3,15 @@ const jwt = require('jsonwebtoken');
 exports.authenticate = (req, res, next) => {
   try {
     const authHeader = req.header('Authorization');
-    console.log('Authorization header:', authHeader);
-    if (!authHeader) {
-      console.log('No Authorization header');
-      return res.status(401).json({ error: 'Por favor, autentique-se' });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Token não fornecido' });
     }
-    const token = authHeader.replace('Bearer ', '');
-    console.log('Token extracted:', token);
+    const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('Decoded token:', decoded);
+    if (!decoded || !decoded.userId) throw new Error('Token inválido');
     req.userId = decoded.userId;
     next();
-  } catch (error) {
-    console.log('Authentication error:', error.message);
-    res.status(401).json({ error: 'Por favor, autentique-se' });
+  } catch (err) {
+    res.status(401).json({ error: 'Autenticação falhou' });
   }
 };
