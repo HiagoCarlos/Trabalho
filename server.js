@@ -6,52 +6,49 @@ const connectDB = require('./src/config/bd');
 const taskRoutes = require('./src/routes/taskRoutes');
 const authRoutes = require('./src/routes/authRoutes');
 const { errorHandler } = require('./src/utils/errorHandler');
+const { authenticate } = require('./src/middlewares/auth'); // Importe o middleware
 
 connectDB();
 
+// Middlewares
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Serve static assets from public folder
+// Arquivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Fix for serving static assets with correct MIME types
-app.use('/public/assents/css/pages', express.static(path.join(__dirname, 'public', 'assents', 'css', 'pages')));
-
-app.use('/api/tasks', taskRoutes);
+// Rotas da API
+app.use('/api/tasks', authenticate, taskRoutes); // Protege rotas de tarefas
 app.use('/api/auth', authRoutes);
-app.use(errorHandler);
 
-// Serve index.html for root route
+// Rotas do Frontend
 app.get('/', (req, res) => {
-  res.redirect('/login');
+  res.sendFile(path.join(__dirname, 'src', 'views', 'login.html'));
 });
 
-// Serve login.html for /login route
 app.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, 'src', 'views', 'login.html'));
 });
 
-// Serve dashboard.html for /dashboard route
-app.get('/dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, 'src', 'views', 'dashboard.html'));
-});
-
-// Serve listatarefas.html for /tasks route
-app.get('/tasks', (req, res) => {
-  res.sendFile(path.join(__dirname, 'src', 'views', 'listatarefas.html'));
-});
-
-// Serve register.html for /register route
 app.get('/register', (req, res) => {
   res.sendFile(path.join(__dirname, 'src', 'views', 'register.html'));
 });
 
-if (require.main === module) {
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
-    console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
-  });
-}
+// Rotas protegidas (servem o HTML inicial)
+app.get(['/dashboard', '/tasks'], authenticate, (req, res) => {
+  res.sendFile(path.join(__dirname, 'src', 'views', 'dashboard.html'));
+});
+
+// Adicione esta rota para o SPA (importante!)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'src', 'views', 'login.html'));
+});
+// Error handler
+app.use(errorHandler);
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
+});
 
 module.exports = app;
-
