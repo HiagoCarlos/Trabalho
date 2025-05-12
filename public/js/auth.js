@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const registerForm = document.getElementById('register-form');
+  const registerForm = document.getElementById('registerForm');
   const loginForm = document.getElementById('login-form');
 
   const showAlert = (type, message) => {
@@ -72,6 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('token', data.token);
         showAlert('success', 'Login realizado com sucesso');
         loginForm.reset();
+        window.location.href = '/dashboard';
       } catch (error) {
         showAlert('error', error.message);
       }
