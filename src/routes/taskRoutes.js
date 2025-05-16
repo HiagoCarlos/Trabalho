@@ -17,4 +17,11 @@ router.put('/api/tasks/:id', TaskController.updateTask);
 // Rota para excluir tarefa (API)
 router.delete('/api/tasks/:id', TaskController.deleteTask);
 
+
+router.get('/', TaskController.listTasks);
+router.get('/create', TaskController.showCreateForm);
+router.post('/create', TaskController.createTask);
+
 module.exports = router;
+
+

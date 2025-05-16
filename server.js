@@ -19,6 +19,13 @@ if (!supabaseUrl || !supabaseKey) {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use((req, res, next) => {
+  // Disponibiliza variáveis globais para todas as views
+  res.locals.currentYear = new Date().getFullYear();
+  res.locals.session = req.session;
+  next();
+});
+
 // Configuração do EJS
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'src', 'views'));
@@ -44,6 +51,7 @@ app.use((req, res, next) => {
 // Rotas
 const authRoutes = require(path.join(__dirname, 'src', 'routes', 'authRoutes'));
 const taskRoutes = require(path.join(__dirname, 'src', 'routes', 'taskRoutes'));
+app.use(express.static(path.join(__dirname, 'src', 'public')));
 
 
 app.use('/', authRoutes);
@@ -56,6 +64,8 @@ app.use((req, res) => {
     title: 'Página não encontrada',
     currentYear: new Date().getFullYear()
   });
+
+  
 });
 
 // Middleware de erro 500
@@ -66,6 +76,28 @@ app.use((err, req, res, next) => {
     message: 'Ocorreu um erro inesperado'
   });
 });
+
+// Depois de todas as rotas
+app.use((err, req, res, next) => {
+  console.error('Erro não tratado:', err.stack);
+  res.status(500).render('error', {
+    title: 'Erro no servidor',
+    message: 'Ocorreu um erro inesperado'
+  });
+});
+
+app.get('/', (req, res) => {
+  try {
+    res.redirect('/tasks'); // ou renderize sua view inicial
+  } catch (error) {
+    console.error('Erro na rota principal:', error);
+    res.status(500).render('error', { 
+      title: 'Erro', 
+      message: 'Falha ao carregar a página inicial' 
+    });
+  }
+});
+
 
 // Inicia o servidor
 app.listen(PORT, () => {

@@ -1,13 +1,11 @@
-const Task = require('../models/Task');
 const { supabase } = require('../config/supabaseClient');
 
 class TaskController {
   /**
-   * Lista todas as tarefas (para renderização EJS)
+   * Lista todas as tarefas (renderiza view EJS)
    */
   static async listTasks(req, res) {
     try {
-      // Verifica se o usuário está logado
       if (!req.session.user) {
         return res.redirect('/login');
       }
@@ -23,7 +21,8 @@ class TaskController {
       res.render('tasks/dashboard', {
         title: 'Minhas Tarefas',
         tasks,
-        currentUrl: req.originalUrl
+        currentUrl: req.originalUrl,
+        messages: req.flash()
       });
     } catch (error) {
       console.error('Erro ao listar tarefas:', error);
@@ -35,7 +34,16 @@ class TaskController {
   }
 
   /**
-   * Cria uma nova tarefa (API JSON)
+   * Mostra formulário de criação (EJS)
+   */
+  static showCreateForm(req, res) {
+    res.render('tasks/create', {
+      title: 'Nova Tarefa'
+    });
+  }
+
+  /**
+   * Cria nova tarefa (API JSON)
    */
   static async createTask(req, res) {
     try {
@@ -48,20 +56,19 @@ class TaskController {
 
       const { data, error } = await supabase
         .from('tasks')
-        .insert([
-          {
-            title,
-            description,
-            user_id,
-            due_date,
-            status: status || 'pending',
-            created_at: new Date().toISOString()
-          }
-        ])
+        .insert([{
+          title,
+          description,
+          user_id,
+          due_date,
+          status: status || 'pending',
+          created_at: new Date().toISOString()
+        }])
         .select();
 
       if (error) throw error;
 
+      req.flash('success', 'Tarefa criada com sucesso');
       res.status(201).json({
         success: true,
         task: data[0]
@@ -87,9 +94,7 @@ class TaskController {
         .eq('id', taskId)
         .single();
 
-      if (error || !task) {
-        throw new Error('Tarefa não encontrada');
-      }
+      if (error || !task) throw new Error('Tarefa não encontrada');
 
       res.render('tasks/edit', {
         title: 'Editar Tarefa',
@@ -105,7 +110,7 @@ class TaskController {
   }
 
   /**
-   * Atualiza uma tarefa existente (API JSON)
+   * Atualiza tarefa (API JSON)
    */
   static async updateTask(req, res) {
     try {
@@ -120,6 +125,7 @@ class TaskController {
 
       if (error) throw error;
 
+      req.flash('success', 'Tarefa atualizada com sucesso');
       res.json({
         success: true,
         task: data[0]
@@ -134,7 +140,7 @@ class TaskController {
   }
 
   /**
-   * Exclui uma tarefa (API JSON)
+   * Remove tarefa (API JSON)
    */
   static async deleteTask(req, res) {
     try {
@@ -147,6 +153,7 @@ class TaskController {
 
       if (error) throw error;
 
+      req.flash('success', 'Tarefa removida com sucesso');
       res.json({ success: true });
     } catch (error) {
       console.error('Erro ao excluir tarefa:', error);

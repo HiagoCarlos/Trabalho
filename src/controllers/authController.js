@@ -1,26 +1,5 @@
 const User = require('../models/User');
 const { supabase } = require('../config/supabaseClient');
-exports.showLogin = (req, res) => {
-  res.render('login/login'); // Renderiza login.html
-};
-
-exports.handleLogin = async (req, res) => {
-  const { email, password } = req.body;
-  
-  try {
-    // Supabase auth (exemplo)
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    
-    if (error) {
-      return res.render('login/login', { error: 'Credenciais inválidas' });
-    }
-
-    // Se login OK, redireciona para dashboard
-    res.redirect('/tasks');
-  } catch (err) {
-    res.render('login/login', { error: 'Erro no servidor' });
-  }
-};
 
 class AuthController {
   // Registro de novo usuário
@@ -108,7 +87,25 @@ class AuthController {
       console.error('Erro ao obter usuário:', error);
       res.status(500).json({ error: 'Erro ao obter informações do usuário' });
     }
+  } static async handleLogin(req, res) {
+  try {
+    const { email, password } = req.body;
+    
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) throw error;
+
+    req.session.user = data.user;
+    res.redirect('/tasks');
+  } catch (error) {
+    res.render('auth/login', {
+      messages: { error: 'Credenciais inválidas' }
+    });
   }
+}
 }
 
 

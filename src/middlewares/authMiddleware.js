@@ -1,6 +1,8 @@
 // middlewares/authMiddleware.js
 const { supabase } = require('../config/supabaseClient');
 
+app.use(express.static(path.join(__dirname, 'src', 'public')));
+
 async function authenticate(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
   

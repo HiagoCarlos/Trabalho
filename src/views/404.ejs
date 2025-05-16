@@ -1,20 +1,19 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= title %></title>
-  <link rel="stylesheet" href="/css/styles.css">
+  <%- include('../partials/head', { title: title }) %>
 </head>
 <body>
-  <%- include('partials/header') %>
+  <%- include('../partials/header') %>
 
   <main class="container">
-    <h1>Página não encontrada</h1>
-    <p>A página que você está procurando não existe ou foi movida.</p>
+    <h1><%= title %></h1>
+    <div class="alert alert-error">
+      <%= message %>
+    </div>
     <a href="/" class="btn">Voltar à página inicial</a>
   </main>
 
-  <%- include('partials/footer') %>
+  <%- include('../partials/footer') %>
 </body>
 </html>
