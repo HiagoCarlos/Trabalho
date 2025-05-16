@@ -1,56 +1,73 @@
 require('dotenv').config();
 const express = require('express');
+const session = require('express-session');
 const path = require('path');
-const app = express();
-const connectDB = require('./src/config/supabaseClient');
-const taskRoutes = require('./src/routes/taskRoutes');
-const authRoutes = require('./src/routes/authRoutes');
-const { errorHandler } = require('./src/utils/errorHandler');
-const { authenticate } = require('./src/middlewares/auth'); // Importe o middleware
+const { createClient } = require('@supabase/supabase-js');
+const supabase = require('./src/config/supabaseClient');
 
-connectDB();
+// Configuração do Supabase (APENAS UMA VEZ)
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error('Erro: SUPABASE_URL e SUPABASE_KEY são obrigatórios no .env');
+  process.exit(1);
+}
+
+
+// Inicializa o Express
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Configuração do EJS
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'src', 'views'));
 
 // Middlewares
-app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'src', 'public')));
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'ntem',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 } // 1 dia
+}));
 
-// Arquivos estáticos
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Rotas da API
-app.use('/api/tasks', authenticate, taskRoutes); // Protege rotas de tarefas
-app.use('/api/auth', authRoutes);
-
-// Rotas do Frontend
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'src', 'views', 'login.html'));
+// Middleware para injetar Supabase e sessão em todas as views
+app.use((req, res, next) => {
+  res.locals.supabase = supabase;
+  res.locals.session = req.session;
+  next();
 });
 
-app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'src', 'views', 'login.html'));
+// Rotas
+const authRoutes = require(path.join(__dirname, 'src', 'routes', 'authRoutes'));
+const taskRoutes = require(path.join(__dirname, 'src', 'routes', 'taskRoutes'));
+
+
+app.use('/', authRoutes);
+app.use('/tasks', taskRoutes);
+
+// Rota 404
+// Rota 404 - Página não encontrada
+app.use((req, res) => {
+  res.status(404).render('404', { 
+    title: 'Página não encontrada',
+    currentYear: new Date().getFullYear()
+  });
 });
 
-app.get('/register', (req, res) => {
-  res.sendFile(path.join(__dirname, 'src', 'views', 'register.html'));
+// Middleware de erro 500
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).render('error', {
+    title: 'Erro no servidor',
+    message: 'Ocorreu um erro inesperado'
+  });
 });
 
-// Rotas protegidas (servem o HTML inicial)
-app.get(['/dashboard', '/tasks'], (req, res) => {
-  res.sendFile(path.join(__dirname, 'src', 'views', 'dashboard.html'));
-});
-
-// Adicione esta rota para o SPA (importante!)
-// Todas outras rotas
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'src', 'views', 'login.html'));
-});
-
-// Error handler
-app.use(errorHandler);
-
-const PORT = process.env.PORT || 3000;
+// Inicia o servidor
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
+  console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
-
-module.exports = app;

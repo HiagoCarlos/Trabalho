@@ -1,30 +1,84 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
+// models/User.js
+const supabase = require('../config/supabaseClient');
 
-const userSchema = new mongoose.Schema({
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
-    lowercase: true
-  },
-  password: {
-    type: String,
-    required: true
+class User {
+  /**
+   * Cria um novo usuário
+   * @param {string} email 
+   * @param {string} password 
+   * @returns {Promise<{data, error}>}
+   */
+  static async create(email, password) {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+    
+    return { data, error };
   }
-}, { timestamps: true });
 
-// Hash da senha antes de salvar
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  this.password = await bcrypt.hash(this.password, 10);
-  next();
-});
+  /**
+   * Faz login do usuário
+   * @param {string} email 
+   * @param {string} password 
+   * @returns {Promise<{data, error}>}
+   */
+  static async login(email, password) {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    
+    return { data, error };
+  }
 
-// Método para comparar senha
-userSchema.methods.comparePassword = async function(candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
-};
+  /**
+   * Faz logout do usuário
+   * @returns {Promise<{error}>}
+   */
+  static async logout() {
+    const { error } = await supabase.auth.signOut();
+    return { error };
+  }
 
-module.exports = mongoose.model('User', userSchema);
+  /**
+   * Obtém o usuário atual
+   * @returns {Promise<{data, error}>}
+   */
+  static async getCurrentUser() {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    return { user, error };
+  }
+
+  /**
+   * Atualiza o perfil do usuário na tabela profiles
+   * @param {string} userId 
+   * @param {object} updates 
+   * @returns {Promise<{data, error}>}
+   */
+  static async updateProfile(userId, updates) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', userId);
+    
+    return { data, error };
+  }
+
+  /**
+   * Obtém o perfil do usuário
+   * @param {string} userId 
+   * @returns {Promise<{data, error}>}
+   */
+  static async getProfile(userId) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    
+    return { data, error };
+  }
+}
+
+module.exports = User;

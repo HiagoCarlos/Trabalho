@@ -1,43 +1,115 @@
-const supabase = require('../config/supabaseClient');
+const User = require('../models/User');
+const { supabase } = require('../config/supabaseClient');
+exports.showLogin = (req, res) => {
+  res.render('login/login'); // Renderiza login.html
+};
 
-exports.register = async (req, res) => {
+exports.handleLogin = async (req, res) => {
+  const { email, password } = req.body;
+  
   try {
-    const { email, password } = req.body;
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return res.status(400).json({ error: 'Email inválido' });
-    }
-    if (!password || password.length < 6) {
-      return res.status(400).json({ error: 'Senha deve ter pelo menos 6 caracteres' });
-    }
-
-    const { user, error } = await supabase.auth.api.createUser({
-      email,
-      password,
-      email_confirm: true
-    });
-
+    // Supabase auth (exemplo)
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    
     if (error) {
-      return res.status(400).json({ error: error.message });
+      return res.render('login/login', { error: 'Credenciais inválidas' });
     }
 
-    res.status(201).json({ message: 'Usuário registrado com sucesso' });
+    // Se login OK, redireciona para dashboard
+    res.redirect('/tasks');
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.render('login/login', { error: 'Erro no servidor' });
   }
 };
 
-exports.login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
+class AuthController {
+  // Registro de novo usuário
+  static async signup(req, res) {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ error: 'Email e senha são obrigatórios' });
+      }
 
-    const { session, error } = await supabase.auth.api.signInWithEmail(email, password);
+      const { data, error } = await User.create(email, password);
+      
+      if (error) {
+        throw error;
+      }
 
-    if (error || !session) {
-      return res.status(401).json({ error: 'Credenciais inválidas' });
+      res.status(201).json({
+        message: 'Usuário criado com sucesso',
+        user: data.user
+      });
+    } catch (error) {
+      console.error('Erro no registro:', error);
+      res.status(400).json({ error: error.message });
     }
-
-    res.json({ token: session.access_token, userId: session.user.id });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
   }
-};
+
+  // Login de usuário
+  static async login(req, res) {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ error: 'Email e senha são obrigatórios' });
+      }
+
+      const { data, error } = await User.login(email, password);
+      
+      if (error) {
+        throw error;
+      }
+
+      res.status(200).json({
+        message: 'Login realizado com sucesso',
+        user: data.user,
+        session: data.session
+      });
+    } catch (error) {
+      console.error('Erro no login:', error);
+      res.status(401).json({ error: 'Credenciais inválidas' });
+    }
+  }
+
+  // Logout de usuário
+  static async logout(req, res) {
+    try {
+      const { error } = await User.logout();
+      
+      if (error) {
+        throw error;
+      }
+
+      res.status(200).json({ message: 'Logout realizado com sucesso' });
+    } catch (error) {
+      console.error('Erro no logout:', error);
+      res.status(500).json({ error: 'Erro ao fazer logout' });
+    }
+  }
+
+  // Obter usuário atual
+  static async getCurrentUser(req, res) {
+    try {
+      const { user, error } = await User.getCurrentUser();
+      
+      if (error) {
+        throw error;
+      }
+
+      if (!user) {
+        return res.status(404).json({ error: 'Usuário não encontrado' });
+      }
+
+      res.status(200).json(user);
+    } catch (error) {
+      console.error('Erro ao obter usuário:', error);
+      res.status(500).json({ error: 'Erro ao obter informações do usuário' });
+    }
+  }
+}
+
+
+module.exports = AuthController;

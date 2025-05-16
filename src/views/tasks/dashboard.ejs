@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <%- include('../partials/head', { title: 'Minhas Tarefas' }) %>
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container">
+    <div class="tasks-header">
+      <h1>Minhas Tarefas</h1>
+      <a href="/tasks/create" class="btn-primary">Nova Tarefa</a>
+    </div>
+
+    <%- include('../partials/messages') %>
+
+    <div class="tasks-grid">
+      <% tasks.forEach(task => { %>
+        <%- include('_task-card', { task }) %>
+      <% }); %>
+    </div>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

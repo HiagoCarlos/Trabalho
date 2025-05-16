@@ -1,13 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const taskController = require('../controllers/taskController');
-const { authenticate } = require('../middlewares/auth');
+const TaskController = require('../controllers/taskController');
 
-router.use(authenticate);
-router.post('/', taskController.createTask);
-router.get('/', taskController.getTasks);
-router.get('/:id', taskController.getTask);
-router.put('/:id', taskController.updateTask);
-router.delete('/:id', taskController.deleteTask);
+// Rota para página de tarefas (EJS)
+router.get('/', TaskController.listTasks);
+
+// Rota para criar tarefa (API)
+router.post('/api/tasks', TaskController.createTask);
+
+// Rota para mostrar formulário de edição (EJS)
+router.get('/edit/:id', TaskController.showEditForm);
+
+// Rota para atualizar tarefa (API)
+router.put('/api/tasks/:id', TaskController.updateTask);
+
+// Rota para excluir tarefa (API)
+router.delete('/api/tasks/:id', TaskController.deleteTask);
 
 module.exports = router;

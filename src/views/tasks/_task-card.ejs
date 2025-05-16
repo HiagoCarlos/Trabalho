@@ -1,0 +1,21 @@
+<div class="task-card">
+  <div class="task-header">
+    <h3><%= task.title %></h3>
+    <span class="task-status <%= task.status %>">
+      <%= task.status === 'completed' ? '✓' : '⌛' %>
+    </span>
+  </div>
+  
+  <p><%= task.description %></p>
+  
+  <% if (task.due_date) { %>
+    <p class="task-due">Prazo: <%= new Date(task.due_date).toLocaleDateString() %></p>
+  <% } %>
+
+  <div class="task-actions">
+    <a href="/tasks/edit/<%= task.id %>" class="btn-sm">Editar</a>
+    <form action="/tasks/delete/<%= task.id %>" method="POST">
+      <button type="submit" class="btn-sm btn-danger">Excluir</button>
+    </form>
+  </div>
+</div>

@@ -1,123 +1,161 @@
-const supabase = require('../config/supabaseClient');
+const Task = require('../models/Task');
+const { supabase } = require('../config/supabaseClient');
 
-exports.createTask = async (req, res) => {
-  try {
-    const { title, description, status, dueDate, priority } = req.body;
-    if (!title || typeof title !== 'string' || title.trim() === '') {
-      return res.status(400).json({ error: 'Título obrigatório' });
-    }
-    const userId = req.userId;
-
-    const { data, error } = await supabase
-      .from('tasks')
-      .insert([
-        { title, description, status, due_date: dueDate, priority, user_id: userId }
-      ]);
-
-    if (error) {
-      return res.status(500).json({ error: error.message });
-    }
-
-    res.status(201).json(data[0]);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-exports.getTasks = async (req, res) => {
-  try {
-    const userId = req.userId;
-    const { status, sortBy } = req.query;
-
-    let query = supabase.from('tasks').select('*').eq('user_id', userId);
-
-    if (status && status !== 'all') {
-      query = query.eq('status', status);
-    }
-
-    if (sortBy) {
-      if (['status', 'priority', 'due_date'].includes(sortBy)) {
-        query = query.order(sortBy, { ascending: true });
+class TaskController {
+  /**
+   * Lista todas as tarefas (para renderização EJS)
+   */
+  static async listTasks(req, res) {
+    try {
+      // Verifica se o usuário está logado
+      if (!req.session.user) {
+        return res.redirect('/login');
       }
-    } else {
-      query = query.order('created_at', { ascending: false });
+
+      const { data: tasks, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('user_id', req.session.user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      res.render('tasks/dashboard', {
+        title: 'Minhas Tarefas',
+        tasks,
+        currentUrl: req.originalUrl
+      });
+    } catch (error) {
+      console.error('Erro ao listar tarefas:', error);
+      res.render('error', {
+        title: 'Erro',
+        message: 'Falha ao carregar tarefas'
+      });
     }
-
-    const { data, error } = await query;
-
-    if (error) {
-      return res.status(500).json({ error: error.message });
-    }
-
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
   }
-};
 
-exports.getTask = async (req, res) => {
-  try {
-    const userId = req.userId;
-    const taskId = req.params.id;
+  /**
+   * Cria uma nova tarefa (API JSON)
+   */
+  static async createTask(req, res) {
+    try {
+      const { title, description, due_date, status } = req.body;
+      const user_id = req.session.user.id;
 
-    const { data, error } = await supabase
-      .from('tasks')
-      .select('*')
-      .eq('id', taskId)
-      .eq('user_id', userId)
-      .single();
+      if (!title) {
+        return res.status(400).json({ error: 'Título é obrigatório' });
+      }
 
-    if (error || !data) {
-      return res.status(404).json({ error: 'Tarefa não encontrada' });
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert([
+          {
+            title,
+            description,
+            user_id,
+            due_date,
+            status: status || 'pending',
+            created_at: new Date().toISOString()
+          }
+        ])
+        .select();
+
+      if (error) throw error;
+
+      res.status(201).json({
+        success: true,
+        task: data[0]
+      });
+    } catch (error) {
+      console.error('Erro ao criar tarefa:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
     }
-
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
   }
-};
 
-exports.updateTask = async (req, res) => {
-  try {
-    const userId = req.userId;
-    const taskId = req.params.id;
-    const updates = req.body;
+  /**
+   * Mostra formulário de edição (EJS)
+   */
+  static async showEditForm(req, res) {
+    try {
+      const taskId = req.params.id;
+      const { data: task, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('id', taskId)
+        .single();
 
-    const { data, error } = await supabase
-      .from('tasks')
-      .update(updates)
-      .eq('id', taskId)
-      .eq('user_id', userId)
-      .single();
+      if (error || !task) {
+        throw new Error('Tarefa não encontrada');
+      }
 
-    if (error || !data) {
-      return res.status(404).json({ error: 'Tarefa não encontrada' });
+      res.render('tasks/edit', {
+        title: 'Editar Tarefa',
+        task
+      });
+    } catch (error) {
+      console.error('Erro ao carregar edição:', error);
+      res.render('error', {
+        title: 'Erro',
+        message: 'Não foi possível carregar a tarefa'
+      });
     }
-
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
   }
-};
 
-exports.deleteTask = async (req, res) => {
-  try {
-    const userId = req.userId;
-    const taskId = req.params.id;
+  /**
+   * Atualiza uma tarefa existente (API JSON)
+   */
+  static async updateTask(req, res) {
+    try {
+      const taskId = req.params.id;
+      const updates = req.body;
 
-    const { data, error } = await supabase
-      .from('tasks')
-      .delete()
-      .eq('id', taskId)
-      .eq('user_id', userId)
-      .single();
+      const { data, error } = await supabase
+        .from('tasks')
+        .update(updates)
+        .eq('id', taskId)
+        .select();
 
-    if (error || !data) {
-      return res.status(404).json({ error: 'Tarefa não encontrada' });
+      if (error) throw error;
+
+      res.json({
+        success: true,
+        task: data[0]
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar tarefa:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
     }
-
-    res.json({ message: 'Tarefa removida com sucesso' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
   }
-};
+
+  /**
+   * Exclui uma tarefa (API JSON)
+   */
+  static async deleteTask(req, res) {
+    try {
+      const taskId = req.params.id;
+
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Erro ao excluir tarefa:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
+  }
+}
+
+module.exports = TaskController;
