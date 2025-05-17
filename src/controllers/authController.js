@@ -87,23 +87,36 @@ class AuthController {
       console.error('Erro ao obter usuário:', error);
       res.status(500).json({ error: 'Erro ao obter informações do usuário' });
     }
-  } static async handleLogin(req, res) {
+  } static showLoginForm(req, res) {
+  res.render('auth/login', {
+    title: 'Login',
+    messages: {
+      error: req.flash('error'),
+      success: req.flash('success'),
+      messages: req.session.messages || {}
+    }
+  });
+}
+
+// Método para processar o login
+static async handleLogin(req, res) {
   try {
     const { email, password } = req.body;
-    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
     });
 
-    if (error) throw error;
+    if (error) {
+      req.flash('error', 'Credenciais inválidas');
+      return res.redirect('/login');
+    }
 
     req.session.user = data.user;
     res.redirect('/tasks');
   } catch (error) {
-    res.render('auth/login', {
-      messages: { error: 'Credenciais inválidas' }
-    });
+    req.flash('error', 'Erro no servidor');
+    res.redirect('/login');
   }
 }
 }

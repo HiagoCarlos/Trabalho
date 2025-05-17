@@ -2,31 +2,27 @@ require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
+const flash = require('connect-flash');
 const { createClient } = require('@supabase/supabase-js');
-const supabase = require('./src/config/supabaseClient');
 
-// Configuração do Supabase (APENAS UMA VEZ)
+// Verificação das variáveis de ambiente
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
+const sessionSecret = process.env.SESSION_SECRET || 'segredo-padrao';
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('Erro: SUPABASE_URL e SUPABASE_KEY são obrigatórios no .env');
   process.exit(1);
 }
 
-
-// Inicializa o Express
+// Inicialização do Express
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use((req, res, next) => {
-  // Disponibiliza variáveis globais para todas as views
-  res.locals.currentYear = new Date().getFullYear();
-  res.locals.session = req.session;
-  next();
-});
+// Configuração do Supabase
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Configuração do EJS
+// Configurações do Express
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'src', 'views'));
 
@@ -35,37 +31,56 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'src', 'public')));
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'ntem',
+  secret: sessionSecret,
   resave: false,
   saveUninitialized: true,
   cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 } // 1 dia
 }));
+app.use(flash());
 
-// Middleware para injetar Supabase e sessão em todas as views
+// Middleware para variáveis globais
 app.use((req, res, next) => {
-  res.locals.supabase = supabase;
-  res.locals.session = req.session;
+  res.locals = {
+    currentYear: new Date().getFullYear(),
+    session: req.session,
+    title: 'Task Manager',
+    messages: {
+      error: req.flash('error'),
+      success: req.flash('success')
+    },
+    supabase: supabase
+  };
   next();
 });
 
 // Rotas
 const authRoutes = require(path.join(__dirname, 'src', 'routes', 'authRoutes'));
 const taskRoutes = require(path.join(__dirname, 'src', 'routes', 'taskRoutes'));
-app.use(express.static(path.join(__dirname, 'src', 'public')));
-
 
 app.use('/', authRoutes);
 app.use('/tasks', taskRoutes);
 
-// Rota 404
-// Rota 404 - Página não encontrada
-app.use((req, res) => {
-  res.status(404).render('404', { 
-    title: 'Página não encontrada',
-    currentYear: new Date().getFullYear()
-  });
+// Rota raiz (deve vir antes do 404 handler)
+app.get('/', (req, res) => {
+  try {
+    if (req.session.user) {
+      return res.redirect('/tasks');
+    }
+    res.redirect('/login');
+  } catch (error) {
+    console.error('Erro na rota principal:', error);
+    res.status(500).render('error', {
+      title: 'Erro',
+      message: 'Falha ao processar a requisição'
+    });
+  }
+});
 
-  
+// Rota 404 (deve ser a última rota)
+app.use((req, res) => {
+  res.status(404).render('404', {
+    title: 'Página não encontrada'
+  });
 });
 
 // Middleware de erro 500
@@ -76,28 +91,6 @@ app.use((err, req, res, next) => {
     message: 'Ocorreu um erro inesperado'
   });
 });
-
-// Depois de todas as rotas
-app.use((err, req, res, next) => {
-  console.error('Erro não tratado:', err.stack);
-  res.status(500).render('error', {
-    title: 'Erro no servidor',
-    message: 'Ocorreu um erro inesperado'
-  });
-});
-
-app.get('/', (req, res) => {
-  try {
-    res.redirect('/tasks'); // ou renderize sua view inicial
-  } catch (error) {
-    console.error('Erro na rota principal:', error);
-    res.status(500).render('error', { 
-      title: 'Erro', 
-      message: 'Falha ao carregar a página inicial' 
-    });
-  }
-});
-
 
 // Inicia o servidor
 app.listen(PORT, () => {

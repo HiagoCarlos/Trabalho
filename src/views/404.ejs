@@ -1,19 +1,15 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <%- include('../partials/head', { title: title }) %>
+  <meta charset="UTF-8">
+  <title>Página não encontrada</title>
+  <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
-  <%- include('../partials/header') %>
-
-  <main class="container">
-    <h1><%= title %></h1>
-    <div class="alert alert-error">
-      <%= message %>
-    </div>
-    <a href="/" class="btn">Voltar à página inicial</a>
-  </main>
-
-  <%- include('../partials/footer') %>
+  <div class="container">
+    <h1>Página não encontrada</h1>
+    <p>A página que você está procurando não existe.</p>
+    <a href="/">Voltar à página inicial</a>
+  </div>
 </body>
 </html>
