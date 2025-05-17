@@ -1,4 +1,4 @@
-const { supabase } = require('../config/supabaseClient');
+const supabase = require('../config/supabaseClient'); // sem as chaves
 const User = require('../models/User');
 
 class UserController {

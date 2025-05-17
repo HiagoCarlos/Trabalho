@@ -3,6 +3,8 @@ const router = express.Router();
 const UserController = require('../controllers/userController');
 const authenticate = require('../middlewares/authMiddleware');
 const upload = require('../config/multer'); // Configuração do upload de arquivos
+const supabase = require('../config/supabaseClient'); // sem as chaves
+
 
 // Todas as rotas de usuário exigem autenticação
 router.use(authenticate);

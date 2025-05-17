@@ -1,4 +1,5 @@
-const { supabase } = require('../config/supabaseClient');
+const supabase = require('../config/supabaseClient'); // sem as chaves
+
 
 class TaskController {
   /**

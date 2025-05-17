@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const TaskController = require('../controllers/taskController');
+const supabase = require('../config/supabaseClient'); // sem as chaves
+
 
 // Rotas de visualização (EJS)
 router.get('/', TaskController.listTasks);
