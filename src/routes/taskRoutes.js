@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const TaskController = require('../controllers/taskController');
-const supabase = require('../config/supabaseClient'); // sem as chaves
+const supabase = require('../config/supabaseClient');
 
 
 // Rotas de visualização (EJS)
@@ -10,7 +10,7 @@ router.get('/create', TaskController.showCreateForm);
 router.get('/edit/:id', TaskController.showEditForm);
 
 // Rotas de API (JSON)
-router.post('/api/tasks', TaskController.createTask);
+router.post('/', TaskController.createTask); 
 router.put('/api/tasks/:id', TaskController.updateTask);
 router.delete('/api/tasks/:id', TaskController.deleteTask);
 

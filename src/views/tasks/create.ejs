@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <%- include('../partials/head', { title: 'Nova Tarefa' }) %>
+<link rel="stylesheet" href="/css/ask-form.css">
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="container">
+    <div class="page-header">
+      <h1>Criar Nova Tarefa</h1>
+      <a href="/tasks" class="btn btn-back">← Voltar</a>
+    </div>
+
+    <%- include('../partials/messages') %>
+
+    <form method="POST" action="/tasks" class="task-form">
+      <div class="form-group">
+        <label for="title">Título*</label>
+        <input 
+          type="text" 
+          id="title" 
+          name="title" 
+          value="<%= locals.formData?.title || '' %>" 
+          required
+          minlength="3"
+          class="form-input"
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="description">Descrição</label>
+        <textarea 
+          id="description" 
+          name="description" 
+          class="form-input"
+          rows="4"
+        ><%= locals.formData?.description || '' %></textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="due_date">Data de Vencimento</label>
+          <input 
+            type="datetime-local" 
+            id="due_date" 
+            name="due_date" 
+            value="<%= locals.formData?.due_date || '' %>"
+            class="form-input"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="status">Status</label>
+          <select id="status" name="status" class="form-input">
+            <option value="pending" <%= locals.formData?.status === 'pending' ? 'selected' : '' %>>Pendente</option>
+            <option value="completed" <%= locals.formData?.status === 'completed' ? 'selected' : '' %>>Concluída</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-submit">Criar Tarefa</button>
+      </div>
+    </form>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

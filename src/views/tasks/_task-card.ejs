@@ -1,21 +1,32 @@
 <div class="task-card">
-  <div class="task-header">
-    <h3><%= task.title %></h3>
-    <span class="task-status <%= task.status %>">
-      <%= task.status === 'completed' ? '✓' : '⌛' %>
+  <div class="task-card__header">
+    <h3 class="task-card__title"><%= task.title %></h3>
+    <span class="task-card__status status-<%= task.status %>">
+      <%= task.status === 'completed' ? 'Concluída' : 'Pendente' %>
     </span>
   </div>
-  
-  <p><%= task.description %></p>
-  
+
   <% if (task.due_date) { %>
-    <p class="task-due">Prazo: <%= new Date(task.due_date).toLocaleDateString() %></p>
+    <div class="task-card__due-date">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+      </svg>
+      <%= new Date(task.due_date).toLocaleDateString('pt-BR') %>
+    </div>
   <% } %>
 
-  <div class="task-actions">
-    <a href="/tasks/edit/<%= task.id %>" class="btn-sm">Editar</a>
-    <form action="/tasks/delete/<%= task.id %>" method="POST">
-      <button type="submit" class="btn-sm btn-danger">Excluir</button>
+  <% if (task.description) { %>
+    <p class="task-card__description"><%= task.description %></p>
+  <% } %>
+
+  <div class="task-card__footer">
+    <a href="/tasks/edit/<%= task.id %>" class="task-card__action task-card__action--edit">
+      Editar
+    </a>
+    <form action="/tasks/api/tasks/<%= task.id %>?_method=DELETE" method="POST" style="display: inline;">
+      <button type="submit" class="task-card__action task-card__action--delete">
+        Excluir
+      </button>
     </form>
   </div>
 </div>

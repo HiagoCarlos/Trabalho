@@ -1,11 +1,8 @@
-<header>
-  <nav>
-    <% if (session && session.user) { %>
-      <a href="/tasks">Minhas Tarefas</a>
-      <a href="/logout">Sair</a>
-    <% } else { %>
-      <a href="/login">Login</a>
-      <a href="/register">Registrar</a>
-    <% } %>
-  </nav>
+<header class="main-header">
+  <div class="header-content">
+    <h1>Task Manager</h1>
+    <form action="/logout" method="POST">
+      <button type="submit" class="logout-btn">Sair</button>
+    </form>
+  </div>
 </header>

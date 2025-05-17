@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const supabase = require('../config/supabaseClient'); // sem as chaves
+const supabase = require('../config/supabaseClient');
 
 
 // Rota unificada de login/registro (GET)
