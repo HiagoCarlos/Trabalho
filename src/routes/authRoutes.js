@@ -1,48 +1,35 @@
 const express = require('express');
 const router = express.Router();
 const AuthController = require('../controllers/authController');
-const supabase = require('../config/supabaseClient');
-
-// Rotas de visualização (GET)
-router.get('/login', (req, res) => {
-  const messages = req.session.messages || {};
-  req.session.messages = {};
-  res.render('auth/login', { messages });
+const upload = require('../config/multer');
+router.get('/auth', (req, res) => {
+  // Determina a aba ativa baseada na URL ou define 'login' como padrão
+  const activeTab = req.query.tab === 'register' ? 'register' : 'login';
+  
+  res.render('auth/auth', {
+    messages: req.flash(),
+    formData: req.body || {},
+    activeTab: activeTab // Passa a variável para o template
+  });
+});
+// Rota unificada que renderiza o template com abas
+router.get('/auth', (req, res) => {
+  res.render('auth/auth', {
+    messages: req.flash(),
+    formData: req.body || {}
+  });
 });
 
-router.get('/register', (req, res) => {
-  const messages = req.session.messages || {};
-  req.session.messages = {};
-  res.render('auth/register', { messages });
-});
-
-// Rotas de API (POST)
-router.post('/signup', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password
-    });
-
-    if (error) throw error;
-
-    req.session.messages = { 
-      success: 'Registro realizado! Verifique seu email.' 
-    };
-    res.redirect('/login');
-    
-  } catch (error) {
-    req.session.messages = { 
-      error: error.message || 'Erro no registro' 
-    };
-    res.redirect('/register');
-  }
-});
-
+// Rota POST para login
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+    
+    if (!email || !password) {
+      req.flash('error', 'Email e senha são obrigatórios');
+      return res.redirect('/auth#login');
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
@@ -51,64 +38,58 @@ router.post('/login', async (req, res) => {
     if (error) throw error;
 
     req.session.user = data.user;
-    req.session.messages = { success: 'Login realizado com sucesso!' };
-    res.redirect('/dashboard');
+    req.flash('success', 'Login realizado com sucesso!');
+    res.redirect('/tasks');
     
   } catch (error) {
-    req.session.messages = { 
-      error: 'Credenciais inválidas' 
-    };
-    res.redirect('/login');
+    req.flash('error', 'Credenciais inválidas');
+    res.redirect('/auth#login');
   }
 });
 
-router.post('/logout', (req, res) => {
-  req.session.destroy();
-  res.redirect('/login');
-});
-
-router.get('/me', (req, res) => {
-  if (!req.session.user) {
-    return res.status(401).json({ error: 'Não autenticado' });
-  }
-  res.json(req.session.user);
-})
-router.post('/signup', async (req, res) => {
+// Rota POST para registro
+router.post('/register', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, confirmPassword } = req.body;
     
-    // Validação básica
     if (!email || !password) {
       req.flash('error', 'Email e senha são obrigatórios');
-      return res.redirect('/register');
+      return res.redirect('/auth#register');
+    }
+
+    if (password !== confirmPassword) {
+      req.flash('error', 'As senhas não coincidem');
+      return res.redirect('/auth#register');
     }
 
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: 'http://localhost:3000/login' // Página após confirmação
+        emailRedirectTo: 'http://localhost:3000/auth'
       }
     });
 
-    if (error) {
-      console.error('Erro no registro:', error);
-      throw error;
-    }
+    if (error) throw error;
 
-    // Mensagem diferente caso precise de confirmação de email
-    const message = data.user?.identities?.length === 0
-      ? 'Confirme seu email para ativar a conta'
-      : 'Registro realizado com sucesso!';
-
-    req.flash('success', message);
-    res.redirect('/login');
+    req.flash(
+      'success', 
+      data.user?.identities?.length === 0 
+        ? 'Confirme seu email para ativar a conta' 
+        : 'Registro realizado com sucesso!'
+    );
+    res.redirect('/auth#login');
     
   } catch (error) {
-    console.error('Erro no registro:', error);
     req.flash('error', error.message || 'Erro ao registrar');
-    res.redirect('/register');
+    res.redirect('/auth#register');
   }
+});
+
+// Logout
+router.post('/logout', (req, res) => {
+  req.session.destroy();
+  res.redirect('/auth');
 });
 
 module.exports = router;

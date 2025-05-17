@@ -146,10 +146,16 @@ class TaskController {
     try {
       const taskId = req.params.id;
 
-      const { error } = await supabase
-        .from('tasks')
-        .delete()
-        .eq('id', taskId);
+      // Para criar tarefas, use:
+const { data: task, error } = await supabase
+  .from('tasks')
+  .insert({
+    user_id: userId, // ID da tabela public.users
+    title: 'Minha tarefa',
+    status: 'pending'
+  })
+  .select();
+        
 
       if (error) throw error;
 

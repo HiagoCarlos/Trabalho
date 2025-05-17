@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <%- include('../partials/head', { title: 'Autenticação | Task Manager' }) %>
+<link rel="stylesheet" href="/css/auth.css">
+</head>
+<body class="auth-page">
+  <main class="auth-container">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h1 class="auth-title">Task Manager</h1>
+        <p class="auth-subtitle">Gerencie suas tarefas com eficiência</p>
+      </div>
+      
+      <div class="auth-tabs">
+        <a href="#login" class="auth-tab active" id="loginTab">Login</a>
+        <a href="#register" class="auth-tab" id="registerTab">Registro</a>
+      </div>
+      
+      <div class="auth-content">
+        <% if (messages.error) { %>
+          <div class="alert alert-error">
+            <svg class="alert-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span><%= messages.error %></span>
+          </div>
+        <% } %>
+        
+        <% if (messages.success) { %>
+          <div class="alert alert-success">
+            <svg class="alert-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            <span><%= messages.success %></span>
+          </div>
+        <% } %>
+
+        <!-- Login Form -->
+        <form id="loginForm" action="/login" method="POST" class="auth-form">
+          <div class="form-group">
+            <label for="email" class="form-label">E-mail</label>
+            <input type="email" id="email" name="email" class="form-control" placeholder="seu@email.com" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="password" class="form-label">Senha</label>
+            <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required>
+          </div>
+          
+          <button type="submit" class="btn btn-primary" id="loginBtn">
+            <span class="btn-text">Entrar</span>
+          </button>
+        </form>
+
+        <!-- Register Form -->
+        <form id="registerForm" action="/register" method="POST" class="auth-form hidden">
+          <div class="form-group">
+            <label for="regEmail" class="form-label">E-mail</label>
+            <input type="email" id="regEmail" name="email" class="form-control" placeholder="seu@email.com" required value="<%= formData.email || '' %>">
+          </div>
+          
+          <div class="form-group">
+            <label for="regPassword" class="form-label">Senha</label>
+            <input type="password" id="regPassword" name="password" class="form-control" placeholder="••••••••" required minlength="6">
+            <p class="password-hint">Mínimo 6 caracteres</p>
+          </div>
+          
+          <div class="form-group">
+            <label for="confirmPassword" class="form-label">Confirmar Senha</label>
+            <input type="password" id="confirmPassword" name="confirmPassword" class="form-control" placeholder="••••••••" required>
+          </div>
+          
+          <button type="submit" class="btn btn-primary" id="registerBtn">
+            <span class="btn-text">Registrar</span>
+          </button>
+        </form>
+
+        <div class="auth-footer">
+          <% if (activeTab === 'login' || typeof activeTab === 'undefined') { %>
+            <p>Não tem conta? <a href="#register" class="auth-link" id="switchToRegister">Crie uma agora</a></p>
+          <% } else { %>
+            <p>Já tem conta? <a href="#login" class="auth-link" id="switchToLogin">Faça login</a></p>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const loginTab = document.getElementById('loginTab');
+      const registerTab = document.getElementById('registerTab');
+      const loginForm = document.getElementById('loginForm');
+      const registerForm = document.getElementById('registerForm');
+      const switchToRegister = document.getElementById('switchToRegister');
+      const switchToLogin = document.getElementById('switchToLogin');
+      
+      // Verifica o hash da URL ao carregar
+      if (window.location.hash === '#register') {
+        switchToRegisterView();
+      }
+      
+      // Event listeners para as abas
+      loginTab.addEventListener('click', function(e) {
+        e.preventDefault();
+        switchToLoginView();
+      });
+      
+      registerTab.addEventListener('click', function(e) {
+        e.preventDefault();
+        switchToRegisterView();
+      });
+      
+      // Event listeners para os links no footer
+      if (switchToRegister) {
+        switchToRegister.addEventListener('click', function(e) {
+          e.preventDefault();
+          switchToRegisterView();
+        });
+      }
+      
+      if (switchToLogin) {
+        switchToLogin.addEventListener('click', function(e) {
+          e.preventDefault();
+          switchToLoginView();
+        });
+      }
+      
+      // Funções para alternar entre views
+      function switchToLoginView() {
+        loginTab.classList.add('active');
+        registerTab.classList.remove('active');
+        loginForm.classList.remove('hidden');
+        registerForm.classList.add('hidden');
+        window.history.replaceState(null, null, '#login');
+      }
+      
+      function switchToRegisterView() {
+        registerTab.classList.add('active');
+        loginTab.classList.remove('active');
+        registerForm.classList.remove('hidden');
+        loginForm.classList.add('hidden');
+        window.history.replaceState(null, null, '#register');
+      }
+      
+      // Adiciona loading nos botões ao submeter
+      const forms = document.querySelectorAll('form');
+      forms.forEach(form => {
+        form.addEventListener('submit', function() {
+          const submitBtn = this.querySelector('button[type="submit"]');
+          if (submitBtn) {
+            submitBtn.classList.add('btn-loading');
+            submitBtn.disabled = true;
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>

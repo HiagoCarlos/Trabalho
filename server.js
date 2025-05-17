@@ -8,7 +8,7 @@ const { createClient } = require('@supabase/supabase-js');
 // Verificação das variáveis de ambiente
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
-const sessionSecret = process.env.SESSION_SECRET || 'segredo-padrao';
+const sessionSecret = process.env.SESSION_SECRET || 'ntem';
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('Erro: SUPABASE_URL e SUPABASE_KEY são obrigatórios no .env');
@@ -34,7 +34,10 @@ app.use(session({
   secret: sessionSecret,
   resave: false,
   saveUninitialized: true,
-  cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 } // 1 dia
+  cookie: { 
+    secure: false, // Defina como true se estiver usando HTTPS
+    maxAge: 24 * 60 * 60 * 1000 // 1 dia
+  }
 }));
 app.use(flash());
 
@@ -48,25 +51,29 @@ app.use((req, res, next) => {
       error: req.flash('error'),
       success: req.flash('success')
     },
-    supabase: supabase
+    supabase: supabase,
+    currentUrl: req.originalUrl // Adiciona a URL atual para navegação
   };
   next();
 });
 
-// Rotas
-const authRoutes = require(path.join(__dirname, 'src', 'routes', 'authRoutes'));
-const taskRoutes = require(path.join(__dirname, 'src', 'routes', 'taskRoutes'));
+// Importação de rotas
+const authRoutes = require('./src/routes/authRoutes');
+const taskRoutes = require('./src/routes/taskRoutes');
+const userRoutes = require('./src/routes/userRoutes');
 
+// Configuração das rotas
 app.use('/', authRoutes);
 app.use('/tasks', taskRoutes);
+app.use('/users', userRoutes);
 
-// Rota raiz (deve vir antes do 404 handler)
+// Rota raiz redireciona para /auth (página unificada de login/registro)
 app.get('/', (req, res) => {
   try {
     if (req.session.user) {
       return res.redirect('/tasks');
     }
-    res.redirect('/login');
+    res.redirect('/auth');
   } catch (error) {
     console.error('Erro na rota principal:', error);
     res.status(500).render('error', {
@@ -74,6 +81,11 @@ app.get('/', (req, res) => {
       message: 'Falha ao processar a requisição'
     });
   }
+});
+
+// Rota de health check
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK', timestamp: new Date() });
 });
 
 // Rota 404 (deve ser a última rota)
@@ -92,7 +104,23 @@ app.use((err, req, res, next) => {
   });
 });
 
+app.use((req, res, next) => {
+  console.log('\n--- Nova Requisição ---');
+  console.log('URL:', req.originalUrl);
+  console.log('Método:', req.method);
+  console.log('Session:', req.session.user);
+  console.log('Body:', req.body);
+  next();
+});
+
 // Inicia o servidor
 app.listen(PORT, () => {
-  console.log(`Servidor rodando em http://localhost:${PORT}`);
+  console.log(`\nServidor rodando em http://localhost:${PORT}`);
+  console.log(`\nRotas disponíveis:`);
+  console.log(`- GET  /           → Redireciona para /auth`);
+  console.log(`- GET  /auth       → Página de login/registro`);
+  console.log(`- POST /login      → Processa login`);
+  console.log(`- POST /register   → Processa registro`);
+  console.log(`- GET  /tasks      → Lista de tarefas`);
+  console.log(`- GET  /health     → Health check da API\n`);
 });

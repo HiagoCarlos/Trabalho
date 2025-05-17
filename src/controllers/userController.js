@@ -1,3 +1,4 @@
+const { supabase } = require('../config/supabaseClient');
 const User = require('../models/User');
 
 class UserController {
@@ -6,15 +7,14 @@ class UserController {
     try {
       const user_id = req.user.id;
       
-      const { data: profile, error } = await User.getProfile(user_id);
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('auth_id', user_id)
+        .single();
       
-      if (error) {
-        throw error;
-      }
-
-      if (!profile) {
-        return res.status(404).json({ error: 'Perfil não encontrado' });
-      }
+      if (error) throw error;
+      if (!profile) return res.status(404).json({ error: 'Perfil não encontrado' });
 
       res.status(200).json(profile);
     } catch (error) {
@@ -27,17 +27,19 @@ class UserController {
   static async updateProfile(req, res) {
     try {
       const user_id = req.user.id;
-      const updates = req.body;
+      let updates = req.body;
 
-      // Remove campos que não devem ser atualizados
-      delete updates.id;
-      delete updates.email; // Email deve ser atualizado via auth
+      // Remove campos protegidos
+      ['id', 'email', 'created_at'].forEach(field => delete updates[field]);
 
-      const { data: updatedProfile, error } = await User.updateProfile(user_id, updates);
+      const { data: updatedProfile, error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('auth_id', user_id)
+        .select()
+        .single();
       
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       res.status(200).json({
         message: 'Perfil atualizado com sucesso',
@@ -49,34 +51,92 @@ class UserController {
     }
   }
 
-  // Upload de avatar (simplificado)
+  // Upload de avatar com Supabase Storage
   static async uploadAvatar(req, res) {
     try {
       const user_id = req.user.id;
-      const file = req.file; // Assume que está usando multer ou similar
+      const file = req.file;
 
       if (!file) {
         return res.status(400).json({ error: 'Nenhum arquivo enviado' });
       }
 
-      // Aqui você implementaria o upload para o Supabase Storage
-      // Esta é uma implementação simplificada
-      const avatarUrl = `/uploads/${file.filename}`;
+      // 1. Upload para o Supabase Storage
+      const fileExt = file.originalname.split('.').pop();
+      const fileName = `${user_id}-${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
 
-      // Atualiza o perfil com a nova URL do avatar
-      const { error } = await User.updateProfile(user_id, { avatar_url: avatarUrl });
-      
-      if (error) {
-        throw error;
-      }
+      const { error: uploadError } = await supabase
+        .storage
+        .from('user-avatars')
+        .upload(filePath, file.buffer, {
+          contentType: file.mimetype,
+          upsert: true
+        });
+
+      if (uploadError) throw uploadError;
+
+      // 2. Obtém URL pública
+      const { data: { publicUrl } } = supabase
+        .storage
+        .from('user-avatars')
+        .getPublicUrl(filePath);
+
+      // 3. Atualiza o perfil com a nova URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('auth_id', user_id);
+
+      if (updateError) throw updateError;
 
       res.status(200).json({
         message: 'Avatar atualizado com sucesso',
-        avatarUrl
+        avatarUrl: publicUrl
       });
     } catch (error) {
       console.error('Erro ao fazer upload do avatar:', error);
       res.status(500).json({ error: 'Erro ao atualizar avatar' });
+    }
+  }
+
+  // Deletar conta (completo)
+  static async deleteAccount(req, res) {
+    try {
+      const user_id = req.user.id;
+      
+      // 1. Deleta todos os dados relacionados primeiro
+      await supabase
+        .from('tasks')
+        .delete()
+        .eq('user_id', user_id);
+
+      // 2. Deleta o perfil
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('auth_id', user_id);
+
+      if (profileError) throw profileError;
+
+      // 3. Deleta o usuário do Auth (requer permissões de service role)
+      const { error: authError } = await supabase.auth.admin.deleteUser(user_id);
+      if (authError) throw authError;
+
+      // 4. Destrói a sessão
+      req.session.destroy();
+
+      res.status(200).json({ 
+        success: true,
+        message: 'Conta deletada com sucesso' 
+      });
+      
+    } catch (error) {
+      console.error('Erro ao deletar conta:', error);
+      res.status(500).json({ 
+        success: false,
+        error: error.message || 'Erro ao deletar conta'
+      });
     }
   }
 }

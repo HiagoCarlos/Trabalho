@@ -1,14 +1,26 @@
-// src/config/supabaseClient.js
 const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Supabase URL e Key são obrigatórios no .env');
-}
+const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true
+  },
+  db: {
+    schema: 'public'
+  }
+});
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Teste de conexão
+supabase.auth.getSession()
+  .then(({ data }) => {
+    console.log('Conexão com Supabase estabelecida com sucesso!');
+  })
+  .catch(err => {
+    console.error('Erro na conexão com Supabase:', err.message);
+  });
 
 module.exports = supabase;

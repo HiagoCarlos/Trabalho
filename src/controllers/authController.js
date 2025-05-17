@@ -107,6 +107,13 @@ static async handleLogin(req, res) {
       password
     });
 
+    // Após login bem-sucedido, você pode acessar:
+const { data: userData } = await supabase
+  .from('users')
+  .select('*')
+  .eq('auth_id', authenticatedUser.id)
+  .single();
+
     if (error) {
       req.flash('error', 'Credenciais inválidas');
       return res.redirect('/login');
