@@ -20,13 +20,11 @@
   <% } %>
 
   <div class="task-card__footer">
-    <a href="/tasks/edit/<%= task.id %>" class="task-card__action task-card__action--edit">
+    <a href="/tasks/<%= task.id %>/update" class="task-card__action task-card__action--edit">
       Editar
     </a>
-    <form action="/tasks/api/tasks/<%= task.id %>?_method=DELETE" method="POST" style="display: inline;">
-      <button type="submit" class="task-card__action task-card__action--delete">
-        Excluir
-      </button>
-    </form>
+    <form action="/tasks/<%= task.id %>/delete" method="POST">
+  <button type="submit" class="btn btn-danger">Excluir</button>
+</form>
   </div>
 </div>

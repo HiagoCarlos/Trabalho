@@ -10,6 +10,7 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 const sessionSecret = process.env.SESSION_SECRET || 'ntem';
 
+
 if (!supabaseUrl || !supabaseKey) {
   console.error('Erro: SUPABASE_URL e SUPABASE_KEY são obrigatórios no .env');
   process.exit(1);

@@ -1,17 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const TaskController = require('../controllers/taskController');
-const supabase = require('../config/supabaseClient');
-
 
 // Rotas de visualização (EJS)
 router.get('/', TaskController.listTasks);
 router.get('/create', TaskController.showCreateForm);
 router.get('/edit/:id', TaskController.showEditForm);
 
-// Rotas de API (JSON)
+// Rotas de ação para formulários HTML (POST)
 router.post('/', TaskController.createTask); 
-router.put('/api/tasks/:id', TaskController.updateTask);
-router.delete('/api/tasks/:id', TaskController.deleteTask);
+router.post('/:id/delete', TaskController.deleteTaskForm);
+router.put('/:id/update', TaskController.updateTaskForm);
 
-module.exports = router;
+
+module.exports = router

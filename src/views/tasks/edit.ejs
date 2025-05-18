@@ -1,0 +1,61 @@
+<%- include('../partials/header', { title: title }) %>
+
+<div class="container mt-5">
+  <h2 class="mb-4">Editar Tarefa</h2>
+  
+  <% if (messages.error) { %>
+    <div class="alert alert-danger">
+      <%= messages.error %>
+    </div>
+  <% } %>
+
+  <form action="/tasks/edit/<%= task.id %>" method="POST">
+    <div class="mb-3">
+      <label for="title" class="form-label">Título*</label>
+      <input 
+        type="text" 
+        class="form-control" 
+        id="title" 
+        name="title" 
+        value="<%= formData.title || task.title %>" 
+        required
+      >
+    </div>
+
+    <div class="mb-3">
+      <label for="description" class="form-label">Descrição</label>
+      <textarea 
+        class="form-control" 
+        id="description" 
+        name="description" 
+        rows="3"
+      ><%= formData.description || task.description || '' %></textarea>
+    </div>
+
+    <div class="mb-3">
+      <label for="due_date" class="form-label">Data de Vencimento</label>
+      <input 
+        type="date" 
+        class="form-control" 
+        id="due_date" 
+        name="due_date" 
+        value="<%= formData.due_date || task.due_date || '' %>"
+      >
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Status</label>
+      <select class="form-select" name="status">
+        <option value="pending" <%= (formData.status || task.status) === 'pending' ? 'selected' : '' %>>Pendente</option>
+        <option value="completed" <%= (formData.status || task.status) === 'completed' ? 'selected' : '' %>>Completa</option>
+      </select>
+    </div>
+
+    <div class="d-flex justify-content-between">
+      <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+      <a href="/tasks" class="btn btn-secondary">Cancelar</a>
+    </div>
+  </form>
+</div>
+
+<%- include('../partials/footer') %>
