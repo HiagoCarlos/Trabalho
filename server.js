@@ -104,14 +104,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.use((req, res, next) => {
-  console.log('\n--- Nova Requisição ---');
-  console.log('URL:', req.originalUrl);
-  console.log('Método:', req.method);
-  console.log('Session:', req.session.user);
-  console.log('Body:', req.body);
-  next();
-});
+
 
 // Inicia o servidor
 app.listen(PORT, () => {
