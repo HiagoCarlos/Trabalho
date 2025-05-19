@@ -110,11 +110,4 @@ app.use((err, req, res, next) => {
 // Inicia o servidor
 app.listen(PORT, () => {
   console.log(`\nServidor rodando em http://localhost:${PORT}`);
-  console.log(`\nRotas disponíveis:`);
-  console.log(`- GET  /           → Redireciona para /auth`);
-  console.log(`- GET  /auth       → Página de login/registro`);
-  console.log(`- POST /login      → Processa login`);
-  console.log(`- POST /register   → Processa registro`);
-  console.log(`- GET  /tasks      → Lista de tarefas`);
-  console.log(`- GET  /health     → Health check da API\n`);
 });
