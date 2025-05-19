@@ -41,7 +41,7 @@ label {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: #000000;
 }
 
 .form-input {
@@ -87,13 +87,13 @@ textarea.form-input {
 }
 
 .btn-submit {
-  background: #4361ee;
+  background: #010102;
   color: white;
   border: none;
 }
 
 .btn-submit:hover {
-  background: #3a56d4;
+  background: #0c0d0f;
   transform: translateY(-2px);
 }
 
