@@ -38,7 +38,18 @@ class UserController {
         .eq('auth_id', user_id)
         .select()
         .single();
-      
+      if (updates.theme_preference || updates.language) {
+      const preferences = {
+        theme: updates.theme_preference || req.user.profile.theme_preference || 'light',
+        language: updates.language || req.user.profile.language || 'pt-BR'
+      };
+      res.cookie('userPreferences', JSON.stringify(preferences), {
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dias
+        sameSite: 'lax',
+        path: '/'
+      });
+    }
       if (error) throw error;
 
       res.status(200).json({

@@ -3,8 +3,30 @@ const express = require('express');
 const session = require('express-session');
 const path = require('path');
 const flash = require('connect-flash');
+const cookieParser = require('cookie-parser');
+const csrf = require('csurf');
+const helmet = require('helmet');
 const { createClient } = require('@supabase/supabase-js');
 
+app.use(helmet());
+app.use(cookieParser());
+
+const csrfProtection = csrf({ cookie: true });
+app.use(csrfProtection);
+
+app.use((req, res, next) => {
+  res.locals.csrfToken = req.csrfToken();
+  next();
+});
+
+app.use((req, res, next) => {
+  // Configurações de segurança para cookies
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
 // Verificação das variáveis de ambiente
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;

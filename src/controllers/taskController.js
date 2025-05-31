@@ -32,12 +32,13 @@ class TaskController {
         created_at: format(new Date(task.created_at), 'dd/MM/yyyy HH:mm')
       }));
 
-      res.render('tasks/dashboard', {
-        title: 'Minhas Tarefas',
-        tasks: formattedTasks,
-        messages: req.flash(),
-        currentUrl: req.originalUrl
-      });
+     res.render('tasks/dashboard', {
+      title: 'Minhas Tarefas',
+      tasks: formattedTasks,
+      messages: req.flash(),
+      currentUrl: req.originalUrl,
+      theme: req.userPreferences?.theme || 'light'
+    });
 
     } catch (error) {
       console.error('Erro ao listar tarefas:', error);

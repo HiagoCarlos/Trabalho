@@ -1,169 +1,316 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="<%= userPreferences?.theme || 'light' %>">
 <head>
-  <%- include('../partials/head', { title: 'Autenticação | Task Manager' }) %>
-<link rel="stylesheet" href="/css/auth.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/auth.css">
+    <style>
+        /* Estilos para o tema escuro/claro */
+        :root {
+            --primary-color: #4a6bff;
+            --primary-hover: #3a5bef;
+            --background: #ffffff;
+            --card-bg: #f8f9fa;
+            --text-color: #333333;
+            --text-secondary: #666666;
+            --border-color: #e0e0e0;
+            --input-bg: #ffffff;
+            --input-border: #dddddd;
+            --error-bg: #fff0f0;
+            --error-text: #d32f2f;
+            --success-bg: #f0fff0;
+            --success-text: #2e7d32;
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #5d7dff;
+            --primary-hover: #4a6bff;
+            --background: #1a1a1a;
+            --card-bg: #2d2d2d;
+            --text-color: #f0f0f0;
+            --text-secondary: #cccccc;
+            --border-color: #444444;
+            --input-bg: #333333;
+            --input-border: #555555;
+            --error-bg: #2a1a1a;
+            --error-text: #ff6b6b;
+            --success-bg: #1a2a1a;
+            --success-text: #6bff6b;
+        }
+
+        /* Estilo para o toggle de tema */
+        .theme-toggle-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .theme-toggle {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .theme-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .theme-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .theme-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .theme-slider {
+            background-color: var(--primary-color);
+        }
+
+        input:checked + .theme-slider:before {
+            transform: translateX(26px);
+        }
+
+        .theme-icon {
+            font-size: 18px;
+        }
+    </style>
 </head>
-<body class="auth-page">
-  <main class="auth-container">
-    <div class="auth-card">
-      <div class="auth-header">
-        <h1 class="auth-title">Task Manager</h1>
-        <p class="auth-subtitle">Gerencie suas tarefas com eficiência</p>
-      </div>
-      
-      <div class="auth-tabs">
-        <a href="#login" class="auth-tab active" id="loginTab">Login</a>
-        <a href="#register" class="auth-tab" id="registerTab">Registro</a>
-      </div>
-      
-      <div class="auth-content">
-        <% if (messages.error) { %>
-          <div class="alert alert-error">
-            <svg class="alert-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="8" x2="12" y2="12"></line>
-              <line x1="12" y1="16" x2="12.01" y2="16"></line>
-            </svg>
-            <span><%= messages.error %></span>
-          </div>
-        <% } %>
-        
-        <% if (messages.success) { %>
-          <div class="alert alert-success">
-            <svg class="alert-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-              <polyline points="22 4 12 14.01 9 11.01"></polyline>
-            </svg>
-            <span><%= messages.success %></span>
-          </div>
-        <% } %>
-
-        <!-- Login Form -->
-        <form id="loginForm" action="/login" method="POST" class="auth-form">
-          <div class="form-group">
-            <label for="email" class="form-label">E-mail</label>
-            <input type="email" id="email" name="email" class="form-control" placeholder="seu@email.com" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="password" class="form-label">Senha</label>
-            <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required>
-          </div>
-          
-          <div class="form-group form-group-inline">
-            <input type="checkbox" id="rememberMe" name="rememberMe" class="form-checkbox">
-            <label for="rememberMe" class="form-label-inline">Lembre de mim</label>
-          </div>
-
-          <button type="submit" class="btn btn-primary" id="loginBtn">
-            <span class="btn-text">Entrar</span>
-          </button>
-        </form>
-
-        <!-- Register Form -->
-        <form id="registerForm" action="/register" method="POST" class="auth-form hidden">
-          <div class="form-group">
-            <label for="regEmail" class="form-label">E-mail</label>
-            <input type="email" id="regEmail" name="email" class="form-control" placeholder="seu@email.com" required value="<%= formData.email || '' %>">
-          </div>
-          
-          <div class="form-group">
-            <label for="regPassword" class="form-label">Senha</label>
-            <input type="password" id="regPassword" name="password" class="form-control" placeholder="••••••••" required minlength="6">
-            <p class="password-hint">Mínimo 6 caracteres</p>
-          </div>
-          
-          <div class="form-group">
-            <label for="confirmPassword" class="form-label">Confirmar Senha</label>
-            <input type="password" id="confirmPassword" name="confirmPassword" class="form-control" placeholder="••••••••" required>
-          </div>
-          
-          <button type="submit" class="btn btn-primary" id="registerBtn">
-            <span class="btn-text">Registrar</span>
-          </button>
-        </form>
-
-        <div class="auth-footer">
-          <% if (activeTab === 'login' || typeof activeTab === 'undefined') { %>
-            <p>Não tem conta? <a href="#register" class="auth-link" id="switchToRegister">Crie uma agora</a></p>
-          <% } else { %>
-            <p>Já tem conta? <a href="#login" class="auth-link" id="switchToLogin">Faça login</a></p>
-          <% } %>
+<body>
+    <div class="auth-container">
+        <!-- Toggle de tema -->
+        <div class="theme-toggle-container">
+            <span class="theme-icon">🌙</span>
+            <label class="theme-toggle">
+                <input type="checkbox" id="theme-toggle" <%= userPreferences?.theme === 'dark' ? 'checked' : '' %>>
+                <span class="theme-slider"></span>
+            </label>
+            <span class="theme-icon">☀️</span>
         </div>
-      </div>
-    </div>
-  </main>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const loginTab = document.getElementById('loginTab');
-      const registerTab = document.getElementById('registerTab');
-      const loginForm = document.getElementById('loginForm');
-      const registerForm = document.getElementById('registerForm');
-      const switchToRegister = document.getElementById('switchToRegister');
-      const switchToLogin = document.getElementById('switchToLogin');
-      
-      // Verifica o hash da URL ao carregar
-      if (window.location.hash === '#register') {
-        switchToRegisterView();
-      }
-      
-      // Event listeners para as abas
-      loginTab.addEventListener('click', function(e) {
-        e.preventDefault();
-        switchToLoginView();
-      });
-      
-      registerTab.addEventListener('click', function(e) {
-        e.preventDefault();
-        switchToRegisterView();
-      });
-      
-      // Event listeners para os links no footer
-      if (switchToRegister) {
-        switchToRegister.addEventListener('click', function(e) {
-          e.preventDefault();
-          switchToRegisterView();
+        <div class="auth-card">
+            <header class="auth-header">
+                <h1 class="auth-title"><%= title %></h1>
+                <p class="auth-subtitle">Acesse sua conta ou registre-se gratuitamente.</p>
+            </header>
+
+            <nav class="auth-tabs">
+                <a href="#login" class="auth-tab <%= activeTab === 'login' ? 'active' : '' %>" data-tab="login">Login</a>
+                <a href="#register" class="auth-tab <%= activeTab === 'register' ? 'active' : '' %>" data-tab="register">Registrar</a>
+            </nav>
+
+            <div class="auth-content">
+                <% if (messages.error && messages.error.length > 0) { %>
+                    <div class="alert alert-error">
+                        <span class="alert-icon">⚠️</span> <%= messages.error[0] %>
+                    </div>
+                <% } %>
+                <% if (messages.success && messages.success.length > 0) { %>
+                    <div class="alert alert-success">
+                        <span class="alert-icon">✅</span> <%= messages.success[0] %>
+                    </div>
+                <% } %>
+
+                <form id="login-form" action="/login" method="POST" class="auth-form <%= activeTab === 'login' ? '' : 'hidden' %>" novalidate>
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <div class="form-group">
+                        <label for="login-email" class="form-label">Email</label>
+                        <input type="email" id="login-email" name="email" class="form-control" 
+                               value="<%= formData && formData.email ? formData.email : '' %>" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password" class="form-label">Senha</label>
+                        <input type="password" id="login-password" name="password" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="checkbox" id="rememberMe" name="rememberMe" value="true" 
+                               <%= formData && formData.rememberMe ? 'checked' : '' %>>
+                        <label for="rememberMe" class="form-label" style="display: inline; margin-left: 8px; font-weight: normal;">
+                            Lembrar de mim
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="btn-text">Entrar</span>
+                    </button>
+                    <div class="auth-footer" style="margin-top: 15px;">
+                        <a href="#" class="auth-link">Esqueceu sua senha?</a>
+                    </div>
+                </form>
+
+                <form id="register-form" action="/register" method="POST" class="auth-form <%= activeTab === 'register' ? '' : 'hidden' %>" novalidate>
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <div class="form-group">
+                        <label for="register-name" class="form-label">Nome</label>
+                        <input type="text" id="register-name" name="name" class="form-control" 
+                               value="<%= formData && formData.name ? formData.name : '' %>" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-email" class="form-label">Email</label>
+                        <input type="email" id="register-email" name="email" class="form-control" 
+                               value="<%= formData && formData.email && activeTab === 'register' ? formData.email : '' %>" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password" class="form-label">Senha</label>
+                        <input type="password" id="register-password" name="password" class="form-control" required>
+                        <small class="password-hint">Mínimo de 6 caracteres.</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword" class="form-label">Confirmar Senha</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="btn-text">Criar Conta</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Gerenciamento de abas
+            const tabs = document.querySelectorAll('.auth-tab');
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+
+            function setActiveTab(targetTabId) {
+                tabs.forEach(tab => {
+                    if (tab.getAttribute('data-tab') === targetTabId) {
+                        tab.classList.add('active');
+                    } else {
+                        tab.classList.remove('active');
+                    }
+                });
+
+                if (targetTabId === 'login') {
+                    loginForm.classList.remove('hidden');
+                    registerForm.classList.add('hidden');
+                } else if (targetTabId === 'register') {
+                    loginForm.classList.add('hidden');
+                    registerForm.classList.remove('hidden');
+                }
+            }
+
+            // Set initial tab based on URL hash or activeTab variable from backend
+            let initialTab = '<%= activeTab %>';
+            if (window.location.hash) {
+                const hashTab = window.location.hash.substring(1);
+                if (hashTab === 'login' || hashTab === 'register') {
+                    initialTab = hashTab;
+                }
+            }
+            setActiveTab(initialTab);
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    const targetTabId = this.getAttribute('data-tab');
+                    setActiveTab(targetTabId);
+                    window.location.hash = targetTabId;
+                });
+            });
+
+            window.addEventListener('hashchange', function() {
+                const hashTab = window.location.hash.substring(1);
+                if (hashTab === 'login' || hashTab === 'register') {
+                    setActiveTab(hashTab);
+                } else if (!hashTab) {
+                    setActiveTab('<%= activeTab %>');
+                }
+            });
+
+            // Gerenciamento do tema
+            const themeToggle = document.getElementById('theme-toggle');
+            const htmlElement = document.documentElement;
+
+            // Verificar preferência salva no localStorage
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                htmlElement.setAttribute('data-theme', savedTheme);
+                themeToggle.checked = savedTheme === 'dark';
+            }
+
+            // Alternar tema
+            themeToggle.addEventListener('change', function() {
+                const newTheme = this.checked ? 'dark' : 'light';
+                htmlElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                
+                // Salvar preferência no servidor se o usuário estiver logado
+                if ('<%= !!user %>' === 'true') {
+                    saveThemePreference(newTheme);
+                }
+            });
+
+            // Função para salvar preferência de tema no servidor
+            function saveThemePreference(theme) {
+                fetch('/auth/save-preferences', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'CSRF-Token': '<%= csrfToken %>'
+                    },
+                    body: JSON.stringify({ theme: theme })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        console.error('Erro ao salvar preferência de tema');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                });
+            }
+
+            // Validação de formulário
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', function(event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+
+            // Verificar se há cookie de autenticação para redirecionamento automático
+            checkAuthCookie();
         });
-      }
-      
-      if (switchToLogin) {
-        switchToLogin.addEventListener('click', function(e) {
-          e.preventDefault();
-          switchToLoginView();
-        });
-      }
-      
-      // Funções para alternar entre views
-      function switchToLoginView() {
-        loginTab.classList.add('active');
-        registerTab.classList.remove('active');
-        loginForm.classList.remove('hidden');
-        registerForm.classList.add('hidden');
-        window.history.replaceState(null, null, '#login');
-      }
-      
-      function switchToRegisterView() {
-        registerTab.classList.add('active');
-        loginTab.classList.remove('active');
-        registerForm.classList.remove('hidden');
-        loginForm.classList.add('hidden');
-        window.history.replaceState(null, null, '#register');
-      }
-      
-      // Adiciona loading nos botões ao submeter
-      const forms = document.querySelectorAll('form');
-      forms.forEach(form => {
-        form.addEventListener('submit', function() {
-          const submitBtn = this.querySelector('button[type="submit"]');
-          if (submitBtn) {
-            submitBtn.classList.add('btn-loading');
-            submitBtn.disabled = true;
-          }
-        });
-      });
-    });
-  </script>
+
+        function checkAuthCookie() {
+            fetch('/auth/check-auth')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.authenticated) {
+                        window.location.href = '/tasks';
+                    }
+                });
+        }
+    </script>
 </body>
 </html>
