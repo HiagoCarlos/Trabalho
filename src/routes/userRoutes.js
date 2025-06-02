@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const UserController = require('../controllers/userController');
-const authenticate = require('../middlewares/authMiddleware');
+const { authenticate } = require('../middlewares/authMiddleware');
 const upload = require('../config/multer'); // Configuração do upload de arquivos
 const supabase = require('../config/supabaseClient'); // sem as chaves
 

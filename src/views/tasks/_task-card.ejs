@@ -26,8 +26,8 @@
     </a>
     
     <!-- Formulário de exclusão (já correto) -->
-    <form action="/tasks/<%= task.id %>/delete" method="POST" class="task-card__delete-form">
-      <button type="submit" class="task-card__action task-card__action--delete">
+      <form action="/tasks/<%= task.id %>/delete" method="POST" class="task-card__delete-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>"> <button type="submit" class="task-card__action task-card__action--delete">
         Excluir
       </button>
     </form>

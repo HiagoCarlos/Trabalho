@@ -5,103 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/auth.css">
-    <style>
-        /* Estilos para o tema escuro/claro */
-        :root {
-            --primary-color: #4a6bff;
-            --primary-hover: #3a5bef;
-            --background: #ffffff;
-            --card-bg: #f8f9fa;
-            --text-color: #333333;
-            --text-secondary: #666666;
-            --border-color: #e0e0e0;
-            --input-bg: #ffffff;
-            --input-border: #dddddd;
-            --error-bg: #fff0f0;
-            --error-text: #d32f2f;
-            --success-bg: #f0fff0;
-            --success-text: #2e7d32;
-        }
-
-        [data-theme="dark"] {
-            --primary-color: #5d7dff;
-            --primary-hover: #4a6bff;
-            --background: #1a1a1a;
-            --card-bg: #2d2d2d;
-            --text-color: #f0f0f0;
-            --text-secondary: #cccccc;
-            --border-color: #444444;
-            --input-bg: #333333;
-            --input-border: #555555;
-            --error-bg: #2a1a1a;
-            --error-text: #ff6b6b;
-            --success-bg: #1a2a1a;
-            --success-text: #6bff6b;
-        }
-
-        /* Estilo para o toggle de tema */
-        .theme-toggle-container {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .theme-toggle {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 24px;
-        }
-
-        .theme-toggle input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .theme-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 24px;
-        }
-
-        .theme-slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
-        input:checked + .theme-slider {
-            background-color: var(--primary-color);
-        }
-
-        input:checked + .theme-slider:before {
-            transform: translateX(26px);
-        }
-
-        .theme-icon {
-            font-size: 18px;
-        }
-    </style>
 </head>
 <body>
-    <div class="auth-container">
-        <!-- Toggle de tema -->
+    <div class="auth-container"
+         data-active-tab="<%= activeTab %>"
+         data-csrf-token="<%= csrfToken %>"
+         data-user-logged-in="<%= (typeof session !== 'undefined' && session && session.user) ? 'true' : 'false' %>"
+         id="authDataContainer"
+    >
         <div class="theme-toggle-container">
             <span class="theme-icon">🌙</span>
             <label class="theme-toggle">
@@ -138,7 +49,7 @@
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <div class="form-group">
                         <label for="login-email" class="form-label">Email</label>
-                        <input type="email" id="login-email" name="email" class="form-control" 
+                        <input type="email" id="login-email" name="email" class="form-control"
                                value="<%= formData && formData.email ? formData.email : '' %>" required>
                     </div>
                     <div class="form-group">
@@ -146,7 +57,7 @@
                         <input type="password" id="login-password" name="password" class="form-control" required>
                     </div>
                     <div class="form-group">
-                        <input type="checkbox" id="rememberMe" name="rememberMe" value="true" 
+                        <input type="checkbox" id="rememberMe" name="rememberMe" value="true"
                                <%= formData && formData.rememberMe ? 'checked' : '' %>>
                         <label for="rememberMe" class="form-label" style="display: inline; margin-left: 8px; font-weight: normal;">
                             Lembrar de mim
@@ -163,13 +74,12 @@
                 <form id="register-form" action="/register" method="POST" class="auth-form <%= activeTab === 'register' ? '' : 'hidden' %>" novalidate>
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <div class="form-group">
-                        <label for="register-name" class="form-label">Nome</label>
-                        <input type="text" id="register-name" name="name" class="form-control" 
+                        <label for="register-name" class="form-label">Nome</label> <input type="text" id="register-name" name="name" class="form-control"
                                value="<%= formData && formData.name ? formData.name : '' %>" required>
                     </div>
                     <div class="form-group">
                         <label for="register-email" class="form-label">Email</label>
-                        <input type="email" id="register-email" name="email" class="form-control" 
+                        <input type="email" id="register-email" name="email" class="form-control"
                                value="<%= formData && formData.email && activeTab === 'register' ? formData.email : '' %>" required>
                     </div>
                     <div class="form-group">
@@ -190,127 +100,145 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Gerenciamento de abas
-            const tabs = document.querySelectorAll('.auth-tab');
-            const loginForm = document.getElementById('login-form');
-            const registerForm = document.getElementById('register-form');
+    document.addEventListener('DOMContentLoaded', function() {
+        const authDataContainer = document.getElementById('authDataContainer');
+        const activeTabFromData = authDataContainer.dataset.activeTab;
+        const csrfTokenFromData = authDataContainer.dataset.csrfToken;
+        const userIsLoggedInFromData = authDataContainer.dataset.userLoggedIn === 'true';
 
-            function setActiveTab(targetTabId) {
-                tabs.forEach(tab => {
-                    if (tab.getAttribute('data-tab') === targetTabId) {
-                        tab.classList.add('active');
-                    } else {
-                        tab.classList.remove('active');
-                    }
-                });
+        // Gerenciamento de abas
+        const tabs = document.querySelectorAll('.auth-tab');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
 
-                if (targetTabId === 'login') {
-                    loginForm.classList.remove('hidden');
-                    registerForm.classList.add('hidden');
-                } else if (targetTabId === 'register') {
-                    loginForm.classList.add('hidden');
-                    registerForm.classList.remove('hidden');
-                }
-            }
-
-            // Set initial tab based on URL hash or activeTab variable from backend
-            let initialTab = '<%= activeTab %>';
-            if (window.location.hash) {
-                const hashTab = window.location.hash.substring(1);
-                if (hashTab === 'login' || hashTab === 'register') {
-                    initialTab = hashTab;
-                }
-            }
-            setActiveTab(initialTab);
-
+        function setActiveTab(targetTabId) {
             tabs.forEach(tab => {
-                tab.addEventListener('click', function(event) {
-                    event.preventDefault();
-                    const targetTabId = this.getAttribute('data-tab');
-                    setActiveTab(targetTabId);
-                    window.location.hash = targetTabId;
-                });
-            });
-
-            window.addEventListener('hashchange', function() {
-                const hashTab = window.location.hash.substring(1);
-                if (hashTab === 'login' || hashTab === 'register') {
-                    setActiveTab(hashTab);
-                } else if (!hashTab) {
-                    setActiveTab('<%= activeTab %>');
+                if (tab.getAttribute('data-tab') === targetTabId) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
                 }
             });
 
-            // Gerenciamento do tema
-            const themeToggle = document.getElementById('theme-toggle');
-            const htmlElement = document.documentElement;
-
-            // Verificar preferência salva no localStorage
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme) {
-                htmlElement.setAttribute('data-theme', savedTheme);
-                themeToggle.checked = savedTheme === 'dark';
+            if (targetTabId === 'login') {
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+            } else if (targetTabId === 'register') {
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
             }
+        }
 
-            // Alternar tema
-            themeToggle.addEventListener('change', function() {
-                const newTheme = this.checked ? 'dark' : 'light';
-                htmlElement.setAttribute('data-theme', newTheme);
-                localStorage.setItem('theme', newTheme);
-                
-                // Salvar preferência no servidor se o usuário estiver logado
-                if ('<%= !!user %>' === 'true') {
-                    saveThemePreference(newTheme);
-                }
-            });
-
-            // Função para salvar preferência de tema no servidor
-            function saveThemePreference(theme) {
-                fetch('/auth/save-preferences', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'CSRF-Token': '<%= csrfToken %>'
-                    },
-                    body: JSON.stringify({ theme: theme })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (!data.success) {
-                        console.error('Erro ao salvar preferência de tema');
-                    }
-                })
-                .catch(error => {
-                    console.error('Erro:', error);
-                });
+        // Set initial tab
+        let initialTab = activeTabFromData;
+        if (window.location.hash) {
+            const hashTab = window.location.hash.substring(1);
+            if (hashTab === 'login' || hashTab === 'register') {
+                initialTab = hashTab;
             }
+        }
+        setActiveTab(initialTab);
 
-            // Validação de formulário
-            const forms = document.querySelectorAll('form');
-            forms.forEach(form => {
-                form.addEventListener('submit', function(event) {
-                    if (!form.checkValidity()) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                    }
-                    form.classList.add('was-validated');
-                }, false);
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function(event) {
+                event.preventDefault();
+                const targetTabId = this.getAttribute('data-tab');
+                setActiveTab(targetTabId);
+                // Atualiza o hash sem recarregar, se quiser manter na URL
+                history.pushState(null, null, '#' + targetTabId);
             });
-
-            // Verificar se há cookie de autenticação para redirecionamento automático
-            checkAuthCookie();
         });
 
-        function checkAuthCookie() {
-            fetch('/auth/check-auth')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.authenticated) {
-                        window.location.href = '/tasks';
-                    }
-                });
+        // Atualiza a aba se o hash mudar (ex: botões de voltar/avançar do navegador)
+         window.addEventListener('hashchange', function() {
+            const hashTab = window.location.hash.substring(1);
+            if (hashTab === 'login' || hashTab === 'register') {
+                setActiveTab(hashTab);
+            } else if (!hashTab && activeTabFromData) { // Volta para a aba inicial se o hash for removido
+                setActiveTab(activeTabFromData);
+            }
+        });
+
+
+        // Gerenciamento do tema
+        const themeToggle = document.getElementById('theme-toggle');
+        const htmlElement = document.documentElement;
+
+        const savedTheme = localStorage.getItem('theme') || (userIsLoggedInFromData ? (document.querySelector('html').dataset.theme || 'light') : 'light');
+        if (savedTheme) {
+            htmlElement.setAttribute('data-theme', savedTheme);
+            themeToggle.checked = savedTheme === 'dark';
         }
+
+
+        themeToggle.addEventListener('change', function() {
+            const newTheme = this.checked ? 'dark' : 'light';
+            htmlElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+
+            if (userIsLoggedInFromData) {
+                saveThemePreference(newTheme);
+            }
+        });
+
+        function saveThemePreference(theme) {
+            fetch('/save-preferences', { // Removido /auth do caminho, ajuste se necessário
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'CSRF-Token': csrfTokenFromData // Usa o token lido do data attribute
+                },
+                body: JSON.stringify({ theme: theme })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    // Lidar com respostas não-OK, como 403 se o CSRF falhar
+                    console.error('Resposta não OK ao salvar preferência de tema:', response.status);
+                    return response.json().then(errData => Promise.reject(errData));
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (!data.success) {
+                    console.error('Erro ao salvar preferência de tema no servidor:', data.error);
+                } else {
+                    console.log('Preferência de tema salva no servidor.');
+                }
+            })
+            .catch(error => {
+                console.error('Erro na requisição para salvar preferência de tema:', error);
+            });
+        }
+
+        // Validação de formulário (opcional, o HTML5 'required' já faz bastante)
+        const forms = document.querySelectorAll('.auth-form'); // Alterado para '.auth-form'
+        forms.forEach(form => {
+            form.addEventListener('submit', function(event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated'); // Para estilos de validação Bootstrap, se usar
+            }, false);
+        });
+
+        // A função checkAuthCookie pode causar um loop se a rota /tasks redirecionar para /auth
+        // Considere a lógica de quando exatamente chamar isso.
+        // Se a página /auth é apenas para usuários não logados, esta verificação pode não ser necessária aqui.
+        // checkAuthCookie();
+    });
+
+    // Esta função estava fora do DOMContentLoaded, movida para referência, mas sua chamada está comentada.
+    // function checkAuthCookie() {
+    //     fetch('/check-auth') // Removido /auth do caminho
+    //         .then(response => response.json())
+    //         .then(data => {
+    //             if (data.authenticated) {
+    //                 // Cuidado com loops de redirecionamento se /tasks redirecionar de volta para /auth
+    //                 // window.location.href = '/tasks';
+    //             }
+    //         });
+    // }
     </script>
 </body>
 </html>

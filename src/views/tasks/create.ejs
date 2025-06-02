@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <%- include('../partials/head', { title: 'Nova Tarefa' }) %>
-<link rel="stylesheet" href="/css/ask-form.css">
+  <link rel="stylesheet" href="/css/ask-form.css">
 </head>
 <body>
   <%- include('../partials/header') %>
@@ -16,7 +16,7 @@
     <%- include('../partials/messages') %>
 
     <form method="POST" action="/tasks" class="task-form">
-      <div class="form-group">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">  <div class="form-group">
         <label for="title">Título*</label>
         <input 
           type="text" 
@@ -43,7 +43,7 @@
         <div class="form-group">
           <label for="due_date">Data de Vencimento</label>
           <input 
-            type="datetime-local" 
+            type="datetime-local"  
             id="due_date" 
             name="due_date" 
             value="<%= locals.formData?.due_date || '' %>"

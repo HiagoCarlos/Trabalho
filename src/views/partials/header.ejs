@@ -2,7 +2,7 @@
   <div class="header-content">
     <h1>Task Manager</h1>
     <form action="/logout" method="POST">
-      <button type="submit" class="logout-btn">Sair</button>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>"> <button type="submit" class="logout-btn">Sair</button>
     </form>
   </div>
 </header>

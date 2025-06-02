@@ -1,93 +1,91 @@
-const { supabase } = require('../config/supabaseClient');
+// src/middlewares/authMiddleware.js
+const supabase = require('../config/supabaseClient'); // CORREÇÃO CRÍTICA AQUI
 
 async function authenticate(req, res, next) {
-  // Verifica se há sessão ativa primeiro
+  // 1. Check for active session first
   if (req.session.user) {
     req.user = req.session.user;
     return next();
   }
 
-  // Caso não tenha sessão, verifica o token (de headers, query ou cookie)
-  const token = req.headers.authorization?.split(' ')[1] || 
-                req.query.token || 
-                req.cookies.authToken;
-  
-  if (!token) {
-    if (req.accepts('html')) {
-      // Se for requisição web, redireciona para login
-      req.flash('error', 'Faça login para continuar');
-      return res.redirect('/auth');
+  // 2. If no session, try to use authToken from cookie
+  const token = req.cookies.authToken;
+
+  if (token) {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+
+      if (userError) {
+        console.warn('Falha na validação do authToken (Supabase):', userError.message);
+        res.clearCookie('authToken', { path: '/' });
+      } else if (user) {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('auth_id', user.id)
+          .single();
+
+        if (profileError || !profile) {
+          console.warn('Perfil não encontrado para usuário validado por authToken:', profileError?.message);
+          res.clearCookie('authToken', { path: '/' });
+        } else {
+          req.session.user = {
+            ...user,
+            profile: profile
+          };
+          req.user = req.session.user;
+
+          return req.session.save(err => {
+            if (err) {
+              console.error("Erro ao salvar sessão após reautenticação por token:", err);
+              return next(err);
+            }
+            return next();
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Erro inesperado durante a autenticação por token:', error);
+      res.clearCookie('authToken', { path: '/' });
     }
-    return res.status(401).json({ error: 'Token de acesso não fornecido' });
   }
 
-  try {
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    
-    if (error) throw error;
-    if (!user) throw new Error('Usuário não autenticado');
-
-    // Buscar perfil do usuário
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('auth_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      throw new Error('Perfil do usuário não encontrado');
-    }
-
-    // Armazena usuário na sessão para requisições web
-    if (req.accepts('html')) {
-      req.session.user = {
-        ...user,
-        profile: profile
-      };
-      await req.session.save();
-    }
-
-    req.user = {
-      ...user,
-      profile: profile
-    };
-    
-    next();
-  } catch (error) {
-    console.error('Erro na autenticação:', error);
-    
-    // Limpar cookies inválidos
-    res.clearCookie('authToken');
-    
-    if (req.accepts('html')) {
-      req.flash('error', 'Sessão expirada. Faça login novamente.');
-      return res.redirect('/auth');
-    }
-    res.status(401).json({ error: 'Token inválido ou expirado' });
+  // 3. If no session and no valid authToken
+  if (req.accepts('html')) {
+    req.flash('error', 'Faça login para continuar.');
+    return res.redirect('/auth');
   }
+  return res.status(401).json({ error: 'Token de acesso não fornecido ou inválido' });
 }
 
-// Middleware para carregar preferências do usuário
 async function loadPreferences(req, res, next) {
+  let preferences = {
+    theme: 'light', // Default theme
+    language: 'pt-BR' // Default language
+  };
+
   try {
-    // Verificar cookie de preferências
     if (req.cookies.userPreferences) {
-      req.userPreferences = JSON.parse(req.cookies.userPreferences);
-    } else if (req.session.user) {
-      // Se não houver cookie, carregar do banco de dados
-      const { data: profile, error } = await supabase
+      const parsedPrefs = JSON.parse(req.cookies.userPreferences);
+      preferences.theme = parsedPrefs.theme || preferences.theme;
+      preferences.language = parsedPrefs.language || preferences.language;
+    } else if (req.session.user && req.session.user.id) {
+      // Se não houver cookie, mas houver sessão, carregar do banco de dados
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('theme_preference, language')
         .eq('auth_id', req.session.user.id)
         .single();
 
-      if (!error && profile) {
-        req.userPreferences = {
-          theme: profile.theme_preference || 'light',
-          language: profile.language || 'pt-BR'
-        };
-        // Atualizar cookie
-        res.cookie('userPreferences', JSON.stringify(req.userPreferences), {
+      if (profileError) {
+        console.error('Erro ao buscar perfil para preferências:', profileError.message);
+        // Mantém os defaults se houver erro no DB
+      } else if (profile) {
+        preferences.theme = profile.theme_preference || preferences.theme;
+        preferences.language = profile.language || preferences.language;
+        
+        // Atualizar/criar cookie com as preferências do DB
+        res.cookie('userPreferences', JSON.stringify(preferences), {
           secure: process.env.NODE_ENV === 'production',
           maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dias
           sameSite: 'lax',
@@ -95,20 +93,19 @@ async function loadPreferences(req, res, next) {
         });
       }
     }
-
-    // Valores padrão se não encontrar preferências
-    req.userPreferences = req.userPreferences || {
-      theme: 'light',
-      language: 'pt-BR'
-    };
-
-    // Disponibilizar para as views
-    res.locals.userPreferences = req.userPreferences;
-    next();
   } catch (error) {
-    console.error('Erro ao carregar preferências:', error);
-    next();
+    // Erro ao parsear cookie JSON ou outro erro inesperado
+    console.error('Erro ao carregar/processar preferências do usuário:', error.message);
+    // preferences já contém os defaults
   }
+
+  req.userPreferences = preferences;
+  res.locals.userPreferences = preferences; // Garante que sempre seja definido
+  
+  // Log para depuração
+  // console.log('loadPreferences: Definindo res.locals.userPreferences para:', res.locals.userPreferences);
+  
+  next();
 }
 
 module.exports = {
