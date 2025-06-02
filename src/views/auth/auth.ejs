@@ -144,23 +144,20 @@
                 event.preventDefault();
                 const targetTabId = this.getAttribute('data-tab');
                 setActiveTab(targetTabId);
-                // Atualiza o hash sem recarregar, se quiser manter na URL
                 history.pushState(null, null, '#' + targetTabId);
             });
         });
 
-        // Atualiza a aba se o hash mudar (ex: botões de voltar/avançar do navegador)
          window.addEventListener('hashchange', function() {
             const hashTab = window.location.hash.substring(1);
             if (hashTab === 'login' || hashTab === 'register') {
                 setActiveTab(hashTab);
-            } else if (!hashTab && activeTabFromData) { // Volta para a aba inicial se o hash for removido
+            } else if (!hashTab && activeTabFromData) { 
                 setActiveTab(activeTabFromData);
             }
         });
 
 
-        // Gerenciamento do tema
         const themeToggle = document.getElementById('theme-toggle');
         const htmlElement = document.documentElement;
 
@@ -182,17 +179,17 @@
         });
 
         function saveThemePreference(theme) {
-            fetch('/save-preferences', { // Removido /auth do caminho, ajuste se necessário
+            fetch('/save-preferences', { 
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'CSRF-Token': csrfTokenFromData // Usa o token lido do data attribute
+                    'CSRF-Token': csrfTokenFromData 
                 },
                 body: JSON.stringify({ theme: theme })
             })
             .then(response => {
                 if (!response.ok) {
-                    // Lidar com respostas não-OK, como 403 se o CSRF falhar
+                    
                     console.error('Resposta não OK ao salvar preferência de tema:', response.status);
                     return response.json().then(errData => Promise.reject(errData));
                 }
@@ -210,35 +207,19 @@
             });
         }
 
-        // Validação de formulário (opcional, o HTML5 'required' já faz bastante)
-        const forms = document.querySelectorAll('.auth-form'); // Alterado para '.auth-form'
+      
+        const forms = document.querySelectorAll('.auth-form'); 
         forms.forEach(form => {
             form.addEventListener('submit', function(event) {
                 if (!form.checkValidity()) {
                     event.preventDefault();
                     event.stopPropagation();
                 }
-                form.classList.add('was-validated'); // Para estilos de validação Bootstrap, se usar
+                form.classList.add('was-validated'); r
             }, false);
         });
 
-        // A função checkAuthCookie pode causar um loop se a rota /tasks redirecionar para /auth
-        // Considere a lógica de quando exatamente chamar isso.
-        // Se a página /auth é apenas para usuários não logados, esta verificação pode não ser necessária aqui.
-        // checkAuthCookie();
     });
-
-    // Esta função estava fora do DOMContentLoaded, movida para referência, mas sua chamada está comentada.
-    // function checkAuthCookie() {
-    //     fetch('/check-auth') // Removido /auth do caminho
-    //         .then(response => response.json())
-    //         .then(data => {
-    //             if (data.authenticated) {
-    //                 // Cuidado com loops de redirecionamento se /tasks redirecionar de volta para /auth
-    //                 // window.location.href = '/tasks';
-    //             }
-    //         });
-    // }
     </script>
 </body>
 </html>

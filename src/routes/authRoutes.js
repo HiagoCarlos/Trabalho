@@ -5,11 +5,8 @@ const csrf = require('csurf');
 
 const csrfProtection = csrf({ cookie: true });
 
-// Rotas GET
 router.get('/auth', csrfProtection, authController.pageLogin);
 router.get('/current-user', authController.getCurrentUser);
-
-// Rotas POST
 router.post('/login', csrfProtection, authController.login);
 router.post('/register', csrfProtection, authController.register);
 router.post('/logout', authController.logout);

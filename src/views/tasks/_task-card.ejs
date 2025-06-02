@@ -20,12 +20,10 @@
   <% } %>
 
   <div class="task-card__footer">
-    <!-- CORREÇÃO: Link para o formulário de edição (GET) -->
     <a href="/tasks/edit/<%= task.id %>" class="task-card__action task-card__action--edit">
       Editar
     </a>
     
-    <!-- Formulário de exclusão (já correto) -->
       <form action="/tasks/<%= task.id %>/delete" method="POST" class="task-card__delete-form">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>"> <button type="submit" class="task-card__action task-card__action--delete">
         Excluir

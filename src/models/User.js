@@ -1,9 +1,8 @@
-// models/User.js
 const supabase = require('../config/supabaseClient');
 
 class User {
   /**
-   * Cria um novo usuário
+   * 
    * @param {string} email 
    * @param {string} password 
    * @returns {Promise<{data, error}>}
@@ -18,7 +17,7 @@ class User {
   }
 
   /**
-   * Faz login do usuário
+   * 
    * @param {string} email 
    * @param {string} password 
    * @returns {Promise<{data, error}>}
@@ -33,7 +32,7 @@ class User {
   }
 
   /**
-   * Faz logout do usuário
+   * 
    * @returns {Promise<{error}>}
    */
   static async logout() {
@@ -42,7 +41,7 @@ class User {
   }
 
   /**
-   * Obtém o usuário atual
+   * 
    * @returns {Promise<{data, error}>}
    */
   static async getCurrentUser() {
@@ -51,7 +50,7 @@ class User {
   }
 
   /**
-   * Atualiza o perfil do usuário na tabela profiles
+   * 
    * @param {string} userId 
    * @param {object} updates 
    * @returns {Promise<{data, error}>}
@@ -66,7 +65,7 @@ class User {
   }
 
   /**
-   * Obtém o perfil do usuário
+   * 
    * @param {string} userId 
    * @returns {Promise<{data, error}>}
    */

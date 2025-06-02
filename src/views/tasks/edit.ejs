@@ -15,7 +15,6 @@
 
     <%- include('../partials/messages') %>
 
-    <!-- Ajuste importante: action deve apontar para a rota de update -->
     <form method="POST" action="/tasks/<%= task.id %>/update" class="task-form">
       <div class="form-group">
         <label for="title">Título*</label>
@@ -43,7 +42,6 @@
       <div class="form-row">
         <div class="form-group">
           <label for="due_date">Data de Vencimento</label>
-          <!-- Ajuste para formatar a data corretamente -->
           <input 
             type="datetime-local" 
             id="due_date" 

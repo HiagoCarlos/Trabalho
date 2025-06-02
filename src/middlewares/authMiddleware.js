@@ -1,14 +1,12 @@
-// src/middlewares/authMiddleware.js
-const supabase = require('../config/supabaseClient'); // CORREÇÃO CRÍTICA AQUI
+const supabase = require('../config/supabaseClient');
 
 async function authenticate(req, res, next) {
-  // 1. Check for active session first
+
   if (req.session.user) {
     req.user = req.session.user;
     return next();
   }
 
-  // 2. If no session, try to use authToken from cookie
   const token = req.cookies.authToken;
 
   if (token) {
@@ -50,7 +48,6 @@ async function authenticate(req, res, next) {
     }
   }
 
-  // 3. If no session and no valid authToken
   if (req.accepts('html')) {
     req.flash('error', 'Faça login para continuar.');
     return res.redirect('/auth');
@@ -60,8 +57,8 @@ async function authenticate(req, res, next) {
 
 async function loadPreferences(req, res, next) {
   let preferences = {
-    theme: 'light', // Default theme
-    language: 'pt-BR' // Default language
+    theme: 'light', 
+    language: 'pt-BR' 
   };
 
   try {
@@ -70,7 +67,7 @@ async function loadPreferences(req, res, next) {
       preferences.theme = parsedPrefs.theme || preferences.theme;
       preferences.language = parsedPrefs.language || preferences.language;
     } else if (req.session.user && req.session.user.id) {
-      // Se não houver cookie, mas houver sessão, carregar do banco de dados
+     
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('theme_preference, language')
@@ -79,31 +76,28 @@ async function loadPreferences(req, res, next) {
 
       if (profileError) {
         console.error('Erro ao buscar perfil para preferências:', profileError.message);
-        // Mantém os defaults se houver erro no DB
+  
       } else if (profile) {
         preferences.theme = profile.theme_preference || preferences.theme;
         preferences.language = profile.language || preferences.language;
         
-        // Atualizar/criar cookie com as preferências do DB
+      
         res.cookie('userPreferences', JSON.stringify(preferences), {
           secure: process.env.NODE_ENV === 'production',
-          maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dias
+          maxAge: 30 * 24 * 60 * 60 * 1000,
           sameSite: 'lax',
           path: '/'
         });
       }
     }
   } catch (error) {
-    // Erro ao parsear cookie JSON ou outro erro inesperado
+
     console.error('Erro ao carregar/processar preferências do usuário:', error.message);
-    // preferences já contém os defaults
   }
 
   req.userPreferences = preferences;
-  res.locals.userPreferences = preferences; // Garante que sempre seja definido
+  res.locals.userPreferences = preferences; 
   
-  // Log para depuração
-  // console.log('loadPreferences: Definindo res.locals.userPreferences para:', res.locals.userPreferences);
   
   next();
 }
