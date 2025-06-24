@@ -129,17 +129,7 @@ class TaskController {
         return res.redirect('/tasks/create');
       }
 
-      let formattedDueDate = null;
-      if (due_date) {
-        const parsedDate = new Date(due_date);
-        if (isNaN(parsedDate.getTime())) {
-          req.flash('error', 'Data de conclusão inválida.');
-          req.flash('formData', req.body);
-          return res.redirect('/tasks/create');
-        }
-        
-        formattedDueDate = parsedDate.toISOString();
-      }
+      const formattedDueDate = due_date || null;
 
       const { data, error } = await supabase
         .from('tasks')

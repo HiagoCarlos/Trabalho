@@ -1,15 +1,36 @@
-// models/Task.js
 const supabase = require('../config/supabaseClient');
 
 class Task {
+  #id;
+  #title;
+  #description;
+  #userId;
+  #status;
+  #dueDate;
+  #createdAt;
+
+  constructor({ id = null, title, description, userId, status = 'pending', dueDate = null, createdAt = null }) {
+    this.#id = id;
+    this.#title = title;
+    this.#description = description;
+    this.#userId = userId;
+    this.#status = status;
+    this.#dueDate = dueDate;
+    this.#createdAt = createdAt;
+  }
+
+  // ======= GETTERS ============
+  get id()          { return this.#id; }
+  get title()       { return this.#title; }
+  get description() { return this.#description; }
+  get userId()      { return this.#userId; }
+  get status()      { return this.#status; }
+  get dueDate()     { return this.#dueDate; }
+  get createdAt()   { return this.#createdAt; }
+
+
   /**
    * Cria uma nova tarefa
-   * @param {string} title 
-   * @param {string} description 
-   * @param {string} userId 
-   * @param {string} dueDate 
-   * @param {string} status 
-   * @returns {Promise<{data, error}>}
    */
   static async create(title, description, userId, dueDate = null, status = 'pending') {
     const { data, error } = await supabase
@@ -25,14 +46,23 @@ class Task {
         }
       ])
       .select();
-    
-    return { data, error };
+
+    if (error) return { data: null, error };
+    const task = new Task({
+      id: data[0].id,
+      title: data[0].title,
+      description: data[0].description,
+      userId: data[0].user_id,
+      status: data[0].status,
+      dueDate: data[0].due_date,
+      createdAt: data[0].created_at
+    });
+
+    return { data: task, error: null };
   }
 
   /**
    * Obtém todas as tarefas de um usuário
-   * @param {string} userId 
-   * @returns {Promise<{data, error}>}
    */
   static async getAll(userId) {
     const { data, error } = await supabase
@@ -40,14 +70,24 @@ class Task {
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
+
+    if (error) return { data: null, error };
     
-    return { data, error };
+    const tasks = data.map(task => new Task({
+      id: task.id,
+      title: task.title,
+      description: task.description,
+      userId: task.user_id,
+      status: task.status,
+      dueDate: task.due_date,
+      createdAt: task.created_at
+    }));
+
+    return { data: tasks, error: null };
   }
 
   /**
    * Obtém uma tarefa por ID
-   * @param {string} taskId 
-   * @returns {Promise<{data, error}>}
    */
   static async getById(taskId) {
     const { data, error } = await supabase
@@ -55,15 +95,24 @@ class Task {
       .select('*')
       .eq('id', taskId)
       .single();
-    
-    return { data, error };
+
+    if (error) return { data: null, error };
+
+    const task = new Task({
+      id: data.id,
+      title: data.title,
+      description: data.description,
+      userId: data.user_id,
+      status: data.status,
+      dueDate: data.due_date,
+      createdAt: data.created_at
+    });
+
+    return { data: task, error: null };
   }
 
   /**
    * Atualiza uma tarefa
-   * @param {string} taskId 
-   * @param {object} updates 
-   * @returns {Promise<{data, error}>}
    */
   static async update(taskId, updates) {
     const { data, error } = await supabase
@@ -71,29 +120,24 @@ class Task {
       .update(updates)
       .eq('id', taskId)
       .select();
-    
+
     return { data, error };
   }
 
   /**
    * Remove uma tarefa
-   * @param {string} taskId 
-   * @returns {Promise<{data, error}>}
    */
   static async delete(taskId) {
     const { data, error } = await supabase
       .from('tasks')
       .delete()
       .eq('id', taskId);
-    
+
     return { data, error };
   }
 
   /**
    * Filtra tarefas por status
-   * @param {string} userId 
-   * @param {string} status 
-   * @returns {Promise<{data, error}>}
    */
   static async filterByStatus(userId, status) {
     const { data, error } = await supabase
@@ -102,8 +146,20 @@ class Task {
       .eq('user_id', userId)
       .eq('status', status)
       .order('due_date', { ascending: true });
-    
-    return { data, error };
+
+    if (error) return { data: null, error };
+
+    const tasks = data.map(task => new Task({
+      id: task.id,
+      title: task.title,
+      description: task.description,
+      userId: task.user_id,
+      status: task.status,
+      dueDate: task.due_date,
+      createdAt: task.created_at
+    }));
+
+    return { data: tasks, error: null };
   }
 }
 

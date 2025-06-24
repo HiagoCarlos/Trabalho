@@ -135,24 +135,6 @@ exports.register = async (req, res) => {
         req.flash('success', 'Registro quase completo! Verifique seu email para confirmar a conta.');
         return res.redirect('/auth?tab=login#login');
     }
-    
-    // Se você não tem uma trigger no Supabase para criar perfis automaticamente,
-    // você precisaria inserir o perfil manualmente aqui.
-    // Exemplo:
-    /*
-    if (authData.user) {
-        const { error: profileError } = await supabase
-            .from('profiles')
-            .insert([{ auth_id: authData.user.id, email: authData.user.email }]); // Adapte os campos
-        if (profileError) {
-            console.error('Erro ao criar perfil para novo usuário:', profileError);
-            // Considere deletar o usuário do Supabase Auth se a criação do perfil falhar
-            // await supabase.auth.admin.deleteUser(authData.user.id); // Requer privilégios de admin
-            req.flash('error', 'Erro ao finalizar o registro. Tente novamente.');
-            return res.redirect('/auth?tab=register#register');
-        }
-    }
-    */
 
     req.flash('success', 'Usuário registrado com sucesso! Faça login para continuar.');
     delete req.session.formData;
