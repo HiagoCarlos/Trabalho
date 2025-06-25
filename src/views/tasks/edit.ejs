@@ -16,6 +16,9 @@
     <%- include('../partials/messages') %>
 
     <form method="POST" action="/tasks/<%= task.id %>/update" class="task-form">
+
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      
       <div class="form-group">
         <label for="title">Título*</label>
         <input 
